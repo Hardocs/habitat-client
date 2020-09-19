@@ -38,12 +38,12 @@ const rendWin = getCurrentWindow()
 // There are the other calls below for separately choosing a directory, and then
 // for loading a set of filenames from it, or for loading content of an individual file.
 
-const selectContentFromFolder = (fileExts = '*', typeName = 'Any Files') => {
+const selectContentFromFolder = (fileExts = ['*'], typeName = 'Any Files') => {
   return new Promise((resolve, reject) => {
     if (process.env.ORIGINAL_XDG_CURRENT_DESKTOP !== null) {
       dialog.showOpenDialog(rendWin, {
         filters: [
-          {name: typeName, extensions: [fileExts]}
+          {name: typeName, extensions: fileExts}
         ],
         properties: [
           'openFile',
@@ -95,19 +95,17 @@ const loadContentFromFilePath = (filePath, options = 'utf8') => {
 // all files of type/s for a chooser-identified folder, for example, such as
 // selectContentFromFolder() just above.  Such calls use the arguments.
 //
-// In the Electron implementation itself, fileExts and typeNames aren't actually
-// used when operating as the default Use case, 'openDirectory', but you see why
-// we have them for other cases, especially those of Habitat services code here.
+// In the Electron implementation itself, typesNames isn't actually
+// used at present, but we're preparedfor when it may be.
 
-const chooseFolderForUse = (fileExts = '*',
-                            typesName = 'Choose a Folder',
+const chooseFolderForUse = (typesName = 'Choose a Folder',
                             properties = [ 'openDirectory']) => {
 
   // as other calls, this is a Promise, so you use via .then and .catch as always
   return new Promise ((resolve, reject) => {
     dialog.showOpenDialog(rendWin, {
         filters: [
-          {name: typesName, extensions: [fileExts]}
+          { name: typesName, extensions: ['*'] }
         ],
         properties: properties
       })
@@ -126,7 +124,7 @@ const chooseFolderForUse = (fileExts = '*',
   })
 }
 
-// Now, why do we have this call, loadFilesFromFolder, especially? It's a
+// Now, why do we have this call, loadFilePathsFromFolder, especially? It's a
 // clear choice when you already know the directory, because then you also will
 // not then have a chooser narrowing down which files are appropriate.
 //
@@ -135,12 +133,16 @@ const chooseFolderForUse = (fileExts = '*',
 // as in the default, by separating the extensions with a | symbol.
 // Be aware that as it's an RE, no spaces are needed or allowed!
 
-const loadFilesFromFolder = (folderPath, fileExts = 'html|htm') => {
+const loadFilePathsFromFolder = (folderPath, fileExts = ['html', 'htm']) => {
   return new Promise((resolve, reject) => {
-    servicesLog('loadFilesFromFolder: ' + JSON.stringify(folderPath))
+    servicesLog('loadFilePathsFromFolder: ' + JSON.stringify(folderPath))
     try {
       const files = fs.readdirSync(folderPath)
-      const extsMatch = new RegExp(fileExts, "g")
+      const filesRE = fileExts.reduce ((accumulator, currentValue) => {
+        return accumulator += '|' + currentValue
+      })
+      const extsMatch = new RegExp(filesRE, "g")
+
       let extFiles = []
       files.forEach(file => {
         if (path.extname(file).match(extsMatch)) {
@@ -149,8 +151,8 @@ const loadFilesFromFolder = (folderPath, fileExts = 'html|htm') => {
       })
       resolve({ folderPath: folderPath, files: extFiles })
     } catch (e) {
-      console.log(JSON.stringify({ loadFilesFromFolder: 'error: ' + e.toString() }))
-      reject({ loadFilesFromFolder: 'error: ' + e.toString() })
+      console.log(JSON.stringify({ loadFilePathsFromFolder: 'error: ' + e.toString() }))
+      reject({ loadFilePathsFromFolder: 'error: ' + e.toString() })
     }
   })
 }
@@ -158,38 +160,38 @@ const loadFilesFromFolder = (folderPath, fileExts = 'html|htm') => {
 // Here's another variation you'll need -- when you want to get _all_
 // the files back from a folder you choose, to make a list of them.
 //
-// The same abilities and rules apply for fileExts as in loadFilesFromFolder,
+// The same abilities and rules apply for fileExts as in loadFilePathsFromFolder,
 // as we use that here.
-const loadFilesFromSelectedFolder = (fileExts = 'html|htm') => {
+const loadFilePathsFromSelectedFolder = (fileExts = ['html', 'htm']) => {
   return new Promise((resolve, reject) => {
     if (process.env.ORIGINAL_XDG_CURRENT_DESKTOP !== null) {
       chooseFolderForUse() // using the default, openDirectory
       .then(folderPath => {
         if (folderPath !== null /* || !folder.canceled*/) {
           // const folderPath = folder.filePaths[0]
-          servicesLog('loadFilesFromSelectedFolder: ' + JSON.stringify(folderPath))
-          loadFilesFromFolder(folderPath, fileExts)
+          servicesLog('loadFilePathsFromSelectedFolder: ' + JSON.stringify(folderPath))
+          loadFilePathsFromFolder(folderPath, fileExts)
             .then (result => {
               resolve(result)
             })
             .catch(e => {
-              reject('loadFilesFromSelectedFolder:errorL' + JSON.stringify(e))
+              reject('loadFilePathsFromSelectedFolder:error: ' + JSON.stringify(e))
             })
         } else {
-          reject({loadFilesFromSelectedFolder: '(Cancelled...)'})
+          reject({loadFilePathsFromSelectedFolder: '(Cancelled...)'})
         }
       })
         .catch(err => {
-          reject ('loadFilesFromSelectedFolder:error: ' + JSON.stringify(err))
+          reject ('loadFilePathsFromSelectedFolder:error: ' + JSON.stringify(err))
         })
 
     } else {
-      reject('loadFilesFromSelectedFolder:error: Not allowed')
+      reject('loadFilePathsFromSelectedFolder:error: Not allowed')
     }
   })
 }
 
-const putContentToFolder = (content,
+const putContentToSelectedFolder = (content,
                             proposedFilename = 'edited',
                             fileExt = 'html',
                             fileDescription = 'Html Files') => {
@@ -217,7 +219,7 @@ const putContentToFolder = (content,
           }
         })
         .catch(e => {
-          reject('putContentToFolder: ' + e.toString())
+          reject('putContentToSelectedFolder: ' + e.toString())
         })
 
     } else {
@@ -280,11 +282,6 @@ const shellProcess = (childPath, args = [], options = {}) => {
   })
 }
 
-const browserLoad = (url) => {
-  rendWin.webContents.setUserAgent('Chrome')
-  return rendWin.loadURL(url)
-}
-
 // utility to keep troubleshooting ability, but get many commented
 // console.log()s out of the codebase. It offers a force argument,
 // for enabling individual log points
@@ -300,10 +297,9 @@ export {
   selectContentFromFolder,
   loadContentFromFilePath,
   chooseFolderForUse,
-  loadFilesFromFolder,
-  loadFilesFromSelectedFolder,
-  putContentToFolder,
+  loadFilePathsFromFolder,
+  loadFilePathsFromSelectedFolder,
+  putContentToSelectedFolder,
   putContentToFilePath,
-  shellProcess,
-  browserLoad
+  shellProcess
 }

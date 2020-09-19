@@ -87,5 +87,4 @@ export {
   createViewOnDatabase,
   createIndexOnDatabase,
   explainJsonFromDatabase,
-  createViewOnDatabase,
 }

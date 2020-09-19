@@ -28,12 +28,11 @@ const habitatServices = {
   selectContentFromFolder,
   loadContentFromFilePath,
   chooseFolderForUse,
-  loadFilesFromFolder,
-  loadFilesFromSelectedFolder,
-  putContentToFolder,
+  loadFilePathsFromFolder,
+  loadFilePathsFromSelectedFolder,
+  putContentToSelectedFolder,
   putContentToFilePath,
-  shellProcess,
-  browserLoad
+  shellProcess
 }
 
 export { habitatDb, habitatServices }

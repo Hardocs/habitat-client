@@ -113,7 +113,7 @@ const upsertProjectToDatabase = (db, owner, name, data) => {
       .catch (err => {
         console.log('upsertProjectToDatabase:missing: ' + JSON.stringify(err))
         return projectData
-      })
+        })
       .then(result => {
         console.log('upsertProjectToDatabase:tostore: ' + JSON.stringify(result))
         return putJsonToDb(db, result)
