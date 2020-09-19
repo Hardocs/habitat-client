@@ -4,19 +4,18 @@ import {
   storeToDatabase,
   loadFromDatabase,
   clearDatabase
-} from '@/modules/habitat-database'
+} from './modules/habitat-database'
 
 import {
   selectContentFromFolder,
   loadContentFromFilePath,
   chooseFolderForUse,
-  loadFilesFromFolder,
-  loadFilesFromSelectedFolder,
-  putContentToFolder,
+  loadFilePathsFromFolder,
+  loadFilePathsFromSelectedFolder,
+  putContentToSelectedFolder,
   putContentToFilePath,
   shellProcess,
-  browserLoad
-} from '@/modules/habitat-localservices'
+} from './modules/habitat-localservices'
 
 const habitatDb = {
   storeToDatabase,

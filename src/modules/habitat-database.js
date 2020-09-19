@@ -20,7 +20,7 @@ import {
   createOrOpenDb, getStatusFromDb,
   getJsonFromDb, putJsonToDb,
   destroyDb // *todo* out later
-} from '@/modules/transport-ifc'
+} from './transport-ifc'
 
 const loadFromDatabase =  (owner = 'hardOwner', project = 'firstProject',
                            dbName = 'hardocs-projects', ) => {
@@ -29,9 +29,7 @@ const loadFromDatabase =  (owner = 'hardOwner', project = 'firstProject',
     getStatusFromDb(db)
       .then (result => {
         console.log ('loadFromDatabase:status: ' + JSON.stringify(result))
-        return result
-      })
-      .then (() => {
+        console.log ('loadFromDatabase:key: ' + keyFromParts(owner, project))
         return getJsonFromDb(db, keyFromParts(owner, project))
       })
       .then (result => {
@@ -39,7 +37,7 @@ const loadFromDatabase =  (owner = 'hardOwner', project = 'firstProject',
         resolve (result)
       })
       .catch (err => {
-        console.log ('loadFromDatabase:error: ' + JSON.stringify(err))
+        console.log ('loadFromDatabase:error: ' + err)
         reject (err)
       })
   })
@@ -104,18 +102,18 @@ const upsertProjectToDatabase = (db, owner, name, data) => {
         if (result) {
           // console.log('assigning: data: ' + JSON.stringify(data))
           const assigned = Object.assign(result, { data: data })
-          // console.log('assigned: data: ' + JSON.stringify(data))
+          console.log('assigned ok') // s: data: ' + JSON.stringify(data))
           return assigned
         } else {
-          return projectData
+          throw new Error ('upsertProjectToDatabase:getJsonFromDb:error:no prior result!')
         }
       })
       .catch (err => {
-        console.log('upsertProjectToDatabase:missing: ' + JSON.stringify(err))
+        console.log('upsertProjectToDatabase: ' + err)
         return projectData
         })
       .then(result => {
-        console.log('upsertProjectToDatabase:tostore: ' + JSON.stringify(result))
+        // console.log('upsertProjectToDatabase:tostore: ' + JSON.stringify(result))
         return putJsonToDb(db, result)
       })
       .then (result => {
