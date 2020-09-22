@@ -74,15 +74,15 @@ const selectContentFromFolder = (fileExts = ['*'], typeName = 'Any Files') => {
 }
 
 const loadContentFromFilePath = (filePath, options = 'utf8') => {
-  return new Promise ((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     fs.readFile(filePath, options,
-       (err, data) => {
-       if (err) {
-        reject('loadContentFromFilePath' + err)
-      } else {
-        resolve({ filePath: filePath, content: data })
-      }
-    })
+      (err, data) => {
+        if (err) {
+          reject('loadContentFromFilePath' + err)
+        } else {
+          resolve({filePath: filePath, content: data})
+        }
+      })
   })
 }
 
@@ -260,7 +260,6 @@ const shellProcess = (childPath, args = [], options = {}) => {
       })
       shellChild.stderr.on('data', (ret) => {
         shellErrs += ret
-        servicesLog('shellChild stderr: ' + ret)
       })
 
       // *todo* still in discovery here, if it all does work well.
@@ -271,7 +270,14 @@ const shellProcess = (childPath, args = [], options = {}) => {
       shellChild.on('close', ret => {
         // console.log ('shellChild close: ' + ret)
         if (ret === 0) {
-          resolve('succeeded')
+          let status = {} // let's try doing this as couchDB does
+          if (shellErrs.length > 0) {
+            servicesLog('shellChild succeeded with issues: ' + shellErrs)
+            status = { ok: false, status: shellErrs }
+          } else {
+            status = { ok: true }
+          }
+          resolve(status)
         } else {
           reject('failed: ' + shellErrs)
         }

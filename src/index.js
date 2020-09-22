@@ -23,7 +23,7 @@ const habitatDb = {
   clearDatabase
 }
 
-const habitatServices = {
+const habitatLocal = {
   selectContentFromFolder,
   loadContentFromFilePath,
   chooseFolderForUse,
@@ -34,4 +34,4 @@ const habitatServices = {
   shellProcess
 }
 
-export { habitatDb, habitatServices }
+export { habitatDb, habitatLocal }
