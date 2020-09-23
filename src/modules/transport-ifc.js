@@ -30,6 +30,10 @@ const getJsonFromDb = (db, query, options = {}) => {
   return db.get(query, options)
 }
 
+const alldocsJsonFromDb = (db, options = {}) => {
+  return db.allDocs(options)
+}
+
 const findJsonFromDb = (db, query) => {
   return db.find(query)
 }
@@ -78,6 +82,7 @@ export {
   upsertJsonToDb,
   explainJsonFromDb,
   getJsonFromDb,
+  alldocsJsonFromDb,
   findJsonFromDb,
   putJsonToDb,
   removeJsonFromDb,

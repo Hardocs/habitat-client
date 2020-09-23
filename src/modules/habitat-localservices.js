@@ -21,7 +21,7 @@ import {spawn} from 'child_process'
 // const child_process = require('child_process')
 // // const spawn = child_process.spawn
 
-const { dialog, getCurrentWindow } = electron.remote
+const { dialog, getCurrentWindow, BrowserWindow } = electron.remote
 const rendWin = getCurrentWindow()
 
 // n.b. throughout these api calls, the practice of having our own Promise wrap
@@ -288,6 +288,58 @@ const shellProcess = (childPath, args = [], options = {}) => {
   })
 }
 
+
+const getNodeCookies = (filter = {}) => {
+  const nodeSession = rendWin.webContents.session
+  return nodeSession.cookies.get(filter)
+}
+
+const deleteNodeCookies = (cookies) => {
+  const nodeSession = rendWin.webContents.session
+  const sessionCookies = nodeSession.cookies
+
+  cookies.forEach(cookie => {
+    let domain  = cookie.domain
+    if (domain[0] === '.') {
+      domain = domain.substr(1)
+    }
+    const url = 'https://' + domain
+    console.log ('cookies.name: ' +  cookie.name + ',  url: ' + url + ',  c-url: ' + cookie.url + ', domain: ' + cookie.domain)
+
+    sessionCookies.remove(url, cookie.name)
+      .then (result => {
+        console.log ('result: ' + result + ', removed ' + url + ', ' + cookie.name)
+      })
+      .catch(e => {
+        console.log('cookie-del:err: ' + e)
+      })
+  })
+}
+
+const getRendererCookies = () => {
+
+}
+
+const showModalPage = (url, options = {userAgent: 'Chrome'}) => {
+  let child = new BrowserWindow({ parent: rendWin, modal: true, show: false })
+  child.loadURL(url, options)
+  child.once('ready-to-show', () => {
+    // alert('modalCookies: ' + document.cookie)
+    child.webContents.on('did-redirect-navigation', (e, url) => {
+      console.log('redirected to:  ' + url);
+      // *todo* this url match on a config...
+      if (url === 'https://hd.narrationsd.com/'
+        || url === 'https://hd.narrationsd.com/#') {
+        child.close()
+        rendWin.reload()
+      }
+    })
+    child.show()
+    // rendWin.reload()
+  })
+}
+
+
 // utility to keep troubleshooting ability, but get many commented
 // console.log()s out of the codebase. It offers a force argument,
 // for enabling individual log points
@@ -307,5 +359,8 @@ export {
   loadFilePathsFromSelectedFolder,
   putContentToSelectedFolder,
   putContentToFilePath,
-  shellProcess
+  shellProcess,
+  showModalPage,
+  getNodeCookies,
+  deleteNodeCookies
 }

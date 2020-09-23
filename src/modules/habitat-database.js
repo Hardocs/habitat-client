@@ -19,7 +19,8 @@
 import {
   createOrOpenDb, getStatusFromDb,
   getJsonFromDb, putJsonToDb,
-  destroyDb // *todo* out later
+  destroyDb,  // *todo* out later
+  alldocsJsonFromDb,
 } from './transport-ifc'
 
 const loadFromDatabase =  (owner = 'hardOwner', project = 'firstProject',
@@ -174,6 +175,28 @@ const clearDatabase = (dbName = 'hardocs-projects') => {
   })
 }
 
+const listOwnerProjects =  (owner = '', dbName = 'hardocs-projects') => {
+  console.log('listOwnerProjects not yet using owner: ' + owner)
+  return new Promise ((resolve, reject) => {
+    const db = createOrOpenDatabase(dbName)
+    getStatusFromDb(db)
+      .then (result => {
+        console.log('loadFromDatabase:status: ' + JSON.stringify(result))
+      })
+      .then (() => {
+        // const key = keyFromParts(owner, '*')
+        return alldocsJsonFromDb(db, { include_docs: true })
+      })
+      .then (result => {
+        resolve(result)
+      })
+      .catch (err => {
+        console.log ('getStatusOfDb:error: ' + err)
+        reject (err)
+      })
+  })
+}
+
 const keyFromParts = (owner, project) => {
   return owner + ':' + project
 }
@@ -184,5 +207,6 @@ export {
   storeToDatabase,
   clearDatabase,
   getStatusOfDb,
+  listOwnerProjects,
   keyFromParts
 }

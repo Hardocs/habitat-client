@@ -3,7 +3,9 @@
 import {
   storeToDatabase,
   loadFromDatabase,
-  clearDatabase
+  clearDatabase,
+  getStatusOfDb,
+  listOwnerProjects
 } from './modules/habitat-database'
 
 import {
@@ -15,12 +17,17 @@ import {
   putContentToSelectedFolder,
   putContentToFilePath,
   shellProcess,
+  showModalPage,
+  getNodeCookies,
+  deleteNodeCookies
 } from './modules/habitat-localservices'
 
 const habitatDb = {
   storeToDatabase,
   loadFromDatabase,
-  clearDatabase
+  clearDatabase,
+  getStatusOfDb,
+  listOwnerProjects,
 }
 
 const habitatLocal = {
@@ -31,7 +38,10 @@ const habitatLocal = {
   loadFilePathsFromSelectedFolder,
   putContentToSelectedFolder,
   putContentToFilePath,
-  shellProcess
+  shellProcess,
+  showModalPage,
+  getNodeCookies,
+  deleteNodeCookies
 }
 
 export { habitatDb, habitatLocal }
