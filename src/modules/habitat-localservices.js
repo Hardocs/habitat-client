@@ -320,22 +320,39 @@ const getRendererCookies = () => {
 
 }
 
-const showModalPage = (url, options = {userAgent: 'Chrome'}) => {
-  let child = new BrowserWindow({ parent: rendWin, modal: true, show: false })
-  child.loadURL(url, options)
-  child.once('ready-to-show', () => {
-    // alert('modalCookies: ' + document.cookie)
-    child.webContents.on('did-redirect-navigation', (e, url) => {
-      console.log('redirected to:  ' + url);
-      // *todo* this url match on a config...
-      if (url === 'https://hd.narrationsd.com/'
-        || url === 'https://hd.narrationsd.com/#') {
-        child.close()
-        rendWin.reload()
-      }
+const loginViaModal = (url,
+                        loggedInMatch = 'https://hd.narrationsd.com/',
+                        options = {userAgent: 'Chrome'}) => {
+  return new Promise ((resolve, reject) => {
+    const child = new BrowserWindow({ parent: rendWin, modal: true, show: false })
+
+    // a little intricate with the events here, bug how it can work
+    let loggedOn = false
+    child.loadURL(url, options)
+
+    child.once('ready-to-show', () => {
+      child.webContents.on('did-redirect-navigation', (e, url) => {
+        if (url === loggedInMatch
+          || url === loggedInMatch + '#') { // means we got through identity proxy
+          loggedOn = true // watch the order here - close event from child.close() checks it
+          child.close()
+          const msg = 'logged in to ' + loggedInMatch
+          // console.log('loginViaModal: ' + msg)
+          resolve(msg)
+        }
+      })
+      child.webContents.on('close', (e) => {
+        // a flag is archaic, but better than try/catch needed on getURL otherwise,
+        // and we know the url anyway. Protecting from loggedOn state, as we'll be
+        // already resolving.
+        if (!loggedOn) {
+          const msg = 'Not logged in, as dialog was closed.'
+          console.log('loginViaModal: ' + msg)
+          reject (msg)
+        }
+      })
+      child.show()
     })
-    child.show()
-    // rendWin.reload()
   })
 }
 
@@ -343,7 +360,12 @@ const showModalPage = (url, options = {userAgent: 'Chrome'}) => {
 // utility to keep troubleshooting ability, but get many commented
 // console.log()s out of the codebase. It offers a force argument,
 // for enabling individual log points
-const servicesLogging = true // *todo* for now - later false thus optional
+let servicesLogging = true // *todo* for now - later false thus optional
+
+const doLogging = (enable) => {
+  console.log ('services logging: ' + JSON.stringify(enable))
+  servicesLogging = enable
+}
 
 const servicesLog = (msg, force = false) => {
   if (servicesLogging || force) {
@@ -360,7 +382,9 @@ export {
   putContentToSelectedFolder,
   putContentToFilePath,
   shellProcess,
-  showModalPage,
+  loginViaModal,
   getNodeCookies,
-  deleteNodeCookies
+  deleteNodeCookies,
+  servicesLog,
+  doLogging
 }

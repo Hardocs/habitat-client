@@ -10,7 +10,7 @@ PouchDb.plugin(PouchDbUpsert)
 
 const createOrOpenDb = (dbName) => {
   return new PouchDb(dbName, {
-    revs_limit: 1 // *todo* easy way; much of interest to actually decide here, affects all
+    // revs_limit: 1 // *todo* easy way; much of interest to actually decide here, affects all
   })
 }
 
@@ -51,8 +51,50 @@ const removeJsonFromDb = (db, record) => {
   return db.remove(record)
 }
 
-const replicateDb = (from, to, options) => {
-  return PouchDb.replicate(from, to, options)
+const replicateDb = (fromDb, toDb, options) => {
+  return new Promise ((resolve, reject) => {
+    PouchDb.replicate(fromDb, toDb, options)
+      .then (result => {
+        resolve (result)
+      })
+      .catch (err => {
+        if (!err.message.includes ('Failed to fetch')) {
+          reject(err)
+        } else {
+          resolve("replication succeeded")
+        }
+      })
+    })
+
+
+  // return new Promise ((resolve, reject) => {
+  //   options = { live: false, retry: true}
+  //   const rep = PouchDb.replicate(fromDb, toDb, options)
+  //     .on ('active', (info) => { resolve(info)})
+  //     .on ('change', (info) => { resolve(info)})
+  //     .on ('paused', (info) => {
+  //       // rep.cancel()
+  //       console.log('rep paused: ' + JSON.stringify(info))
+  //       resolve('paused'/*JSON.stringify(info)*/)
+  //     })
+  //     .on ('complete', (info) => {
+  //       // rep.cancel()
+  //       console.log('rep completed: ' + JSON.stringify(info))
+  //       resolve(info)
+  //     })
+  //     .on ('error', (err) => {
+  //       console.log('rep error: ' + err)
+  //       if (!err.message.includes ('Failed to fetch')) {
+  //         reject(err)
+  //       }
+  //     })
+  //     .on ('denied', (err) => {
+  //       console.log('rep denied: ' + err)
+  //       // if (!err.message.includes ('Failed to fetch')) {
+  //         reject(err)
+  //       // }
+  //     })
+  // })
 }
 
 const compactDb = (db) => {

@@ -5,7 +5,9 @@ import {
   loadFromDatabase,
   clearDatabase,
   getStatusOfDb,
-  listOwnerProjects
+  listOwnerProjects,
+  replicateDatabase,
+  assureRemoteLogin
 } from './modules/habitat-database'
 
 import {
@@ -17,7 +19,6 @@ import {
   putContentToSelectedFolder,
   putContentToFilePath,
   shellProcess,
-  showModalPage,
   getNodeCookies,
   deleteNodeCookies
 } from './modules/habitat-localservices'
@@ -28,6 +29,8 @@ const habitatDb = {
   clearDatabase,
   getStatusOfDb,
   listOwnerProjects,
+  replicateDatabase,
+  assureRemoteLogin
 }
 
 const habitatLocal = {
@@ -39,7 +42,6 @@ const habitatLocal = {
   putContentToSelectedFolder,
   putContentToFilePath,
   shellProcess,
-  showModalPage,
   getNodeCookies,
   deleteNodeCookies
 }

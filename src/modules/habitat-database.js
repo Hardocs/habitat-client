@@ -20,8 +20,9 @@ import {
   createOrOpenDb, getStatusFromDb,
   getJsonFromDb, putJsonToDb,
   destroyDb,  // *todo* out later
-  alldocsJsonFromDb,
+  alldocsJsonFromDb, replicateDb
 } from './transport-ifc'
+import { loginViaModal, servicesLog } from './habitat-localservices'
 
 const loadFromDatabase =  (owner = 'hardOwner', project = 'firstProject',
                            dbName = 'hardocs-projects', ) => {
@@ -197,6 +198,47 @@ const listOwnerProjects =  (owner = '', dbName = 'hardocs-projects') => {
   })
 }
 
+const replicateDatabase = (from, to, options = {}) => {
+  const fromDb = createOrOpenDatabase(from)
+  const toDb = createOrOpenDatabase(to)
+  // *todo* a little status checking Promise surround here...pronto
+
+  return replicateDb(fromDb, toDb, options)
+}
+
+const assureRemoteLogin = (dbName) => {
+  return new Promise ((resolve, reject) => {
+    const db = createOrOpenDatabase(dbName)
+    getStatusFromDb(db)
+      .then (result => {
+        servicesLog('assureRemoteLogin:checkStatus: ' + JSON.stringify(result))
+        console.log ('logged in...')
+        resolve ({ ok: true, msg: 'logged in to ' + dbName })
+      })
+      .catch(err => {
+        // console.log ('checkStatus:error: ' + err)
+        if (!err.toString().includes('Failed to fetch')) {
+          reject ({ ok: false, msg: 'unexpected '
+              + dbName + ' status check error: ' + err})
+        } else {
+          servicesLog('need to log in to ' + dbName + ', as rejected without identity')
+          const dbPathOnly = dbName.split('/')
+          const db = dbPathOnly.pop() // just the host, not the db
+          const dbHost = dbPathOnly.join('/')
+          loginViaModal(dbHost + '/sign_in')
+            .then (result => {
+              // console.log('assureRemoteLogin:logInViaModel result: ' + result + db)
+              resolve ({ ok: true, msg: result + db })
+            })
+            .catch(err => {
+              // console.log('assureRemoteLogin:logInViaModel error: ' + err)
+              reject ({ ok: false, msg: err })
+            })
+        }
+      })
+  })
+}
+
 const keyFromParts = (owner, project) => {
   return owner + ':' + project
 }
@@ -208,5 +250,7 @@ export {
   clearDatabase,
   getStatusOfDb,
   listOwnerProjects,
+  replicateDatabase,
+  assureRemoteLogin,
   keyFromParts
 }
