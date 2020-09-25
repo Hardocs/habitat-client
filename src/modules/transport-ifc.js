@@ -58,15 +58,11 @@ const replicateDb = (fromDb, toDb, options) => {
         resolve (result)
       })
       .catch (err => {
-        if (!err.message.includes ('Failed to fetch')) {
           reject(err)
-        } else {
-          resolve("replication succeeded")
-        }
       })
     })
 
-
+  // *todo* leaving this approach for the moment, in case it has  other interests
   // return new Promise ((resolve, reject) => {
   //   options = { live: false, retry: true}
   //   const rep = PouchDb.replicate(fromDb, toDb, options)
