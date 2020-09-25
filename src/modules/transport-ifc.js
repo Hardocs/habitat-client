@@ -1,6 +1,6 @@
 // here all database interactions are abstracted, thus decoupled
 
-import PouchDb from 'pouchdb';
+import PouchDb from 'pouchdb-browser';
 import PouchDbFind from 'pouchdb-find';
 import PouchDbUpsert from 'pouchdb-upsert';
 import { v4 as uuidv4 } from 'uuid'

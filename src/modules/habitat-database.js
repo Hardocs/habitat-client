@@ -54,7 +54,7 @@ const storeToDatabase = (owner, project,
       .then (result => {
         console.log ('storeToDatabase:status: ' + JSON.stringify(result))
         // console.log ('storeToDatabase:data: ' + JSON.stringify(data))
-        return upsertProjectToDatabase(db, owner, project, data)
+        return upsertProjectToDatabase(owner, project, data, db)
       })
       .then(result => {
         // console.log ('storeToDatabase:upsert ' + JSON.stringify(result))
@@ -87,7 +87,7 @@ const createOrOpenDatabase = (dbName, locale = 'electron-browser') => {
   return db
 }
 
-const upsertProjectToDatabase = (db, owner, name, data) => {
+const upsertProjectToDatabase = (owner, name, data, db) => {
   // *todo* seems to work as expected, but is a little different from lib - check
   return new Promise ((resolve, reject) => {
     const id = keyFromParts(owner, name)
