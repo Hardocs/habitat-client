@@ -216,9 +216,21 @@ const assureRemoteLogin = (dbName) => {
         resolve ({ ok: true, msg: 'logged in to ' + dbName })
       })
       .catch(err => {
-        // console.log ('checkStatus:error: ' + err)
-        if (!err.toString().includes('Failed to fetch')) {
-          reject ({ ok: false, msg: 'unexpected '
+        // Be very careful here. There are different responses from the oauth2-proxy,
+        // depending on what it knows. Without any previous oauth2 cookie, it 401s,
+        // which means there isn't any expected JSON reply internally for the status check.
+        // If it has the oauth2cookie but isn't able to verify a chosen identity,
+        // then we get a different fail I think also from oauth2-proxy, where it refuses
+        // the connection outright.
+        //
+        // Curious, actually, as the cases are really in some sense 401 and 403, but
+        // what exists is they play it, and in any case, Pouch api doesn't let us see or
+        // otherwise deal very sensibly, so we have to check the strings to act well ourselves.
+
+        if (!err.toString().includes('Unexpected end of JSON input') // no oauth2 cookie
+          && !err.toString().includes('Failed to fetch') // not logged in to identity
+        ) {
+          reject ({ ok: false, msg: 'assureRemoteLogin:unexpected: '
               + dbName + ' status check error: ' + err})
         } else {
           servicesLog('need to log in to ' + dbName + ', as rejected without identity')
