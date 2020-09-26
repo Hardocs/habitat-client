@@ -278,12 +278,12 @@ const requestHabitat = (commandPath = '/get-login-identity') => {
 }
 
 // *todo* so these two will go out as soon as requestHabitat gets real
-const getLoginIdentity = (dummyName = 'ggl$narrationsd') => {
+const getLoginIdentity = (dummyName = 'ggl/narrationsd') => {
   // *todo* convenience before the habitat-hd implementation
   return { ok: true, identity: dummyName }
 }
 
-const createOwnerDb = (dbName = 'ggl$narrationsd') => {
+const createOwnerDb = (dbName = 'ggl/narrationsd') => {
   // *todo* convenience before the habitat-hd implementation
   return { ok: true, dbName: dbName }
 }
