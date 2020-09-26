@@ -13,8 +13,8 @@
 // in event time, not clock time. Thus we reflect this back, and the promise
 // eventual results are put right into the UX data, to be immediately displayed.
 
-// we never use async/await, because we want the UX to respond. That its
-// fresh data comes later after action to prepare for it, is natural, is expected.
+// we never use async/await, because we want the UX to respond,not block. That its
+// viewed data comes later after action to prepare for it, is natural, is expected.
 
 import {
   createOrOpenDb, getStatusFromDb,
@@ -22,7 +22,10 @@ import {
   destroyDb,  // *todo* out later
   alldocsJsonFromDb, replicateDb
 } from './transport-ifc'
-import { loginViaModal, servicesLog } from './habitat-localservices'
+import {
+  loginViaModal,
+  servicesLog
+} from './habitat-localservices'
 
 const loadFromDatabase =  (owner = 'hardOwner', project = 'firstProject',
                            dbName = 'hardocs-projects', ) => {
@@ -251,6 +254,40 @@ const assureRemoteLogin = (dbName) => {
   })
 }
 
+// these are habitat-hd abilities, rather than CloudDb itself
+// *todo* open calls one way to do it, but a single call as next, and path strings is better
+
+const requestHabitat = (commandPath = '/get-login-identity') => {
+  console.log('commandHabitat: ' + commandPath)
+
+  // something like the structure habitat-hd will use
+  let result = {}
+  const segments = commandPath.split('/')
+  switch (segments[0]) {
+    case 'get-login-identity':
+      result = getLoginIdentity()
+      break
+    case 'create-owner-db':
+      result = createOwnerDb()
+      break
+    default:
+      result = { ok: false, msg: 'No soap, no capability like: ' + commandPath }
+      break
+  }
+  return result
+}
+
+// *todo* so these two will go out as soon as requestHabitat gets real
+const getLoginIdentity = (dummyName = 'ggl$narrationsd') => {
+  // *todo* convenience before the habitat-hd implementation
+  return { ok: true, identity: dummyName }
+}
+
+const createOwnerDb = (dbName = 'ggl$narrationsd') => {
+  // *todo* convenience before the habitat-hd implementation
+  return { ok: true, dbName: dbName }
+}
+
 const keyFromParts = (owner, project) => {
   return owner + ':' + project
 }
@@ -264,5 +301,6 @@ export {
   listOwnerProjects,
   replicateDatabase,
   assureRemoteLogin,
+  requestHabitat,
   keyFromParts
 }

@@ -1,6 +1,6 @@
 {
   "name": "@hardocs-project/habitat-client",
-  "version": "0.5.18",
+  "version": "0.5.20",
   "description": "Habitat Client API",
   "main": "lib/index.js",
   "sideEffects": false,
@@ -9,6 +9,7 @@
     "drypub": "npm publish --access public --dry-run",
     "vpub": "npm publish --registry http://localhost:4873",
     "ppub": "npm publish --access public",
+    "apub": "npm publish --access public --tag alpha",
     "bpub": "npm publish --access public --tag beta",
     "rpub": "npm publish --access public --tag rc",
     "npub": "npm publish --access public --tag next",
@@ -16,6 +17,13 @@
   },
   "author": "Narration SD",
   "license": "SEE LICENSE IN LICENSE.md",
+  "dependencies": {
+    "pouchdb-browser": "^7.2.2",
+    "pouchdb-find": "^7.2.2",
+    "pouchdb-promise": "6.2.0",
+    "pouchdb-upsert": "^2.2.0",
+    "uuid": "^8.3.0"
+  },
   "devDependencies": {
     "@babel/cli": "^7.5.5",
     "@babel/core": "^7.5.5",

@@ -7,7 +7,8 @@ import {
   getStatusOfDb,
   listOwnerProjects,
   replicateDatabase,
-  assureRemoteLogin
+  assureRemoteLogin,
+  requestHabitat
 } from './modules/habitat-database'
 
 import {
@@ -30,7 +31,8 @@ const habitatDb = {
   getStatusOfDb,
   listOwnerProjects,
   replicateDatabase,
-  assureRemoteLogin
+  assureRemoteLogin,
+  requestHabitat
 }
 
 const habitatLocal = {
