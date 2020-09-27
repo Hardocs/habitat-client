@@ -6,9 +6,7 @@ import {
   clearDatabase,
   getStatusOfDb,
   listOwnerProjects,
-  replicateDatabase,
-  assureRemoteLogin,
-  requestHabitat
+  replicateDatabase
 } from './modules/habitat-database'
 
 import {
@@ -24,6 +22,11 @@ import {
   deleteNodeCookies
 } from './modules/habitat-localservices'
 
+import {
+  assureRemoteLogin,
+  doRequest
+} from './modules/habitat-cloud'
+
 const habitatDb = {
   storeToDatabase,
   loadFromDatabase,
@@ -32,7 +35,7 @@ const habitatDb = {
   listOwnerProjects,
   replicateDatabase,
   assureRemoteLogin,
-  requestHabitat
+  doRequest
 }
 
 const habitatLocal = {
@@ -48,4 +51,9 @@ const habitatLocal = {
   deleteNodeCookies
 }
 
-export { habitatDb, habitatLocal }
+const habitat = {
+  doRequest,
+  assureRemoteLogin
+}
+
+export { habitat, habitatDb, habitatLocal }
