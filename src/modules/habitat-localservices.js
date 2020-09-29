@@ -18,10 +18,6 @@ import fs from 'fs'
 import path from 'path'
 import electron from 'electron'
 import {spawn} from 'child_process'
-// const child_process = require('child_process')
-// // const spawn = child_process.spawn
-electron.remote.require('electron-fetch')
-
 
 const { dialog, getCurrentWindow, BrowserWindow } = electron.remote
 const rendWin = getCurrentWindow()

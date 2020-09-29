@@ -22,9 +22,7 @@ const doRequest = (commandPath = '/get--wut-login-identity') => {
       result = getLoginIdentity()
       break
     case 'create-owner':
-      console.log('create-owner calling')
       result = createOwner(segments[1], segments[2])
-      console.log ('createOwner type: ' + typeof result)
       break
     case 'db-exists':
       result = dbExists(decodeURIComponent(segments[1]))
@@ -81,25 +79,43 @@ const createOwner = (dbName, url) => {
   // *todo* convenience before the more competent habitat-hd implementation
   dbName = decodeURIComponent(dbName)
   url = decodeURIComponent(url) + '/habitat-request'
-  console.log('client creating owner: ' + dbName + ', url: ' + url)
+  console.log('client requesting cloud create owner: ' + dbName + ', url: ' + url)
+  const body = {
+    name: dbName,
+    cmd: url,
+    json: true
+  }
   return fetch(url, {
-    method: 'PUT',
-    body: dbName,
+    method: 'POST',
+    body: JSON.stringify(body),
     credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
     headers: new Headers({
-      'Content-Type': 'text/plain'
+      'Content-Type': 'application/json', // 'text/plain'
     }),
   })
     .then(result => {
-      if (result.fault) {
-        throw new Error('postTo: ' + result.fault)
+      // console.log ('result: ' + JSON.stringify(result))
+      // console.log ('result raw: ' + result)
+      const type = result.headers.get('Content-Type')
+      console.log ('result content type: ' + type)
+      if (type.includes('text/plain')) {
+        return result.text()
+      } else {
+        return result.json()
       }
-      console.log('createOwner: ' + JSON.stringify(result))
-      return {ok: true, msg: 'Created owner: ' + dbName, dbName: dbName}
+    })
+    .then(result => {
+      if (typeof result !== 'object') {
+        return { ok: true, msg: 'Created owner: ' +
+            ', (string) ' + result, dbName: dbName}
+      } else {
+        return { ok: result.ok, msg: 'Created owner: ' + dbName +
+            ', ' + result.msg, dbName: dbName}
+        }
     })
     .catch(err => {
       console.log('createOwner:error ' + err)
-      return {ok: false, msg: 'whoops: ' + err, dbName: dbName}
+      return {ok: false, msg: 'cmd:createOwner:error: ' + err, dbName: dbName}
     })
 }
 
