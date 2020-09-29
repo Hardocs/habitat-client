@@ -1,6 +1,6 @@
 // here all database interactions are abstracted, thus decoupled
 
-import PouchDb from 'pouchdb-browser';
+import PouchDb from 'pouchdb';
 import PouchDbFind from 'pouchdb-find';
 import PouchDbUpsert from 'pouchdb-upsert';
 import { v4 as uuidv4 } from 'uuid'
@@ -39,8 +39,8 @@ const findJsonFromDb = (db, query) => {
 }
 
 const putJsonToDb = (db, data) => {
-  // from now on, we'll use our own ids, sensible to data,
-  // *todo* but for now, this is left for original demo
+  // *todo* from now on, we'll use our own ids, sensible to data,
+  // *todo* but for now, this is left for original demo, out soon
   if (!data._id) {
     data._id = uuidv4()
   }
@@ -61,36 +61,6 @@ const replicateDb = (fromDb, toDb, options) => {
           reject(err)
       })
     })
-
-  // *todo* leaving this approach for the moment, in case it has  other interests
-  // return new Promise ((resolve, reject) => {
-  //   options = { live: false, retry: true}
-  //   const rep = PouchDb.replicate(fromDb, toDb, options)
-  //     .on ('active', (info) => { resolve(info)})
-  //     .on ('change', (info) => { resolve(info)})
-  //     .on ('paused', (info) => {
-  //       // rep.cancel()
-  //       console.log('rep paused: ' + JSON.stringify(info))
-  //       resolve('paused'/*JSON.stringify(info)*/)
-  //     })
-  //     .on ('complete', (info) => {
-  //       // rep.cancel()
-  //       console.log('rep completed: ' + JSON.stringify(info))
-  //       resolve(info)
-  //     })
-  //     .on ('error', (err) => {
-  //       console.log('rep error: ' + err)
-  //       if (!err.message.includes ('Failed to fetch')) {
-  //         reject(err)
-  //       }
-  //     })
-  //     .on ('denied', (err) => {
-  //       console.log('rep denied: ' + err)
-  //       // if (!err.message.includes ('Failed to fetch')) {
-  //         reject(err)
-  //       // }
-  //     })
-  // })
 }
 
 const compactDb = (db) => {
