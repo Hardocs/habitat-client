@@ -1,6 +1,6 @@
 {
   "name": "@hardocs-project/habitat-client",
-  "version": "0.5.25",
+  "version": "0.5.26",
   "description": "Habitat Client API",
   "main": "lib/index.js",
   "sideEffects": false,
