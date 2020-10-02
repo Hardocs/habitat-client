@@ -6,7 +6,7 @@ import {getStatusFromDb} from './transport-ifc';
 import {getNodeCookies, loginViaModal, servicesLog} from './habitat-localservices';
 import {createOrOpenDatabase} from './habitat-database';
 
-// it's critical to have PoudhDb's fetch(), to get our auth cookies through
+// it's critical to have PouchDb's fetch(), to get our auth cookies through when doing _commands_
 import { fetch } from 'pouchdb-fetch/lib/index-browser.es'
 
 const doRequest = (commandPath = '/get--wut-login-identity') => {

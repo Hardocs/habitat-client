@@ -286,7 +286,8 @@ const shellProcess = (childPath, args = [], options = {}) => {
   })
 }
 
-
+// these two ops on Node cookies very likely to go away for safety; to be replaced by
+// a single call to log off, which is the thing they're used for other than development
 const getNodeCookies = (filter = {}) => {
   const nodeSession = rendWin.webContents.session
   return nodeSession.cookies.get(filter)

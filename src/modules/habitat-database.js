@@ -27,69 +27,58 @@ import {
   servicesLog
 } from './habitat-localservices'
 
-const loadFromDatabase =  (owner = 'hardOwner', project = 'firstProject',
+// Both load and store are due soon to change internal implementation,
+// to match the cloud side now emerging. Signatures have already changed,
+// noting it's Projects they deal with.
+const loadProjectFromDatabase =  (owner = 'hardOwner', project = 'firstProject',
                            dbName = 'hardocs-projects', ) => {
   return new Promise ((resolve, reject) => {
     const db = createOrOpenDatabase(dbName)
     getStatusFromDb(db)
       .then (result => {
-        console.log ('loadFromDatabase:status: ' + JSON.stringify(result))
-        console.log ('loadFromDatabase:key: ' + keyFromParts(owner, project))
+        console.log ('loadProjectFromDatabase:status: ' + JSON.stringify(result))
+        console.log ('loadProjectFromDatabase:key: ' + keyFromParts(owner, project))
         return getJsonFromDb(db, keyFromParts(owner, project))
       })
       .then (result => {
-        console.log('loadFromDatabase:result: ' + JSON.stringify(result))
+        console.log('loadProjectFromDatabase:result: ' + JSON.stringify(result))
         resolve (result)
       })
       .catch (err => {
-        console.log ('loadFromDatabase:error: ' + err)
+        console.log ('loadProjectFromDatabase:error: ' + err)
         reject (err)
       })
   })
 }
 
-const storeToDatabase = (owner, project,
+const storeProjectToDatabase = (owner, project,
                         data = {}, dbName = 'hardocs-projects') => {
 
   return new Promise ((resolve, reject) => {
     const db = createOrOpenDatabase(dbName)
     getStatusFromDb(db)
       .then (result => {
-        console.log ('storeToDatabase:status: ' + JSON.stringify(result))
-        // console.log ('storeToDatabase:data: ' + JSON.stringify(data))
+        console.log ('storeProjectToDatabase:status: ' + JSON.stringify(result))
+        // console.log ('storeProjectToDatabase:data: ' + JSON.stringify(data))
         return upsertProjectToDatabase(owner, project, data, db)
       })
       .then(result => {
-        // console.log ('storeToDatabase:upsert ' + JSON.stringify(result))
+        // console.log ('storeProjectToDatabase:upsert ' + JSON.stringify(result))
         if (!result.ok) { // errors won't throw of themselves, thus we test
           reject (result)
         }
         resolve (result)
       })
       .catch (err => {
-        console.log ('storeToDatabase:error: ' + err)
+        console.log ('storeProjectToDatabase:error: ' + err)
         reject (err)
       })
   })
 }
 
-const createOrOpenDatabase = (dbName, locale = 'electron-browser') => {
-  let db = null
-  switch(locale) {
-    case 'electron-browser':
-      db = createOrOpenDb(dbName)
-      break
-
-    case 'lab-local':
-    case 'cloud-reach':
-    default:
-      throw new Error ('only electron-browser-local database at present...')
-      // lint, huh...
-      // break
-  }
-  return db
-}
-
+// upsert is a service needed internally, not to be exposed, as it handles a
+// particular case of store to database. Also to change implementation
+// to match emerging cloud.
 const upsertProjectToDatabase = (owner, name, data, db) => {
   // *todo* seems to work as expected, but is a little different from lib - check
   return new Promise ((resolve, reject) => {
@@ -137,7 +126,7 @@ const getStatusOfDb =  (dbName = 'hardocs-projects') => {
     const db = createOrOpenDatabase(dbName)
     getStatusFromDb(db)
       .then (result => {
-        console.log ('loadFromDatabase:status: ' + JSON.stringify(result))
+        console.log ('loadProjectFromDatabase:status: ' + JSON.stringify(result))
         resolve(result)
       })
       .catch (err => {
@@ -148,7 +137,24 @@ const getStatusOfDb =  (dbName = 'hardocs-projects') => {
 }
 
 
-// *todo* n.b. this will not be a user-available call in the real Hardoces!!
+const createOrOpenDatabase = (dbName, locale = 'electron-browser') => {
+  let db = null
+  switch(locale) {
+    case 'electron-browser':
+      db = createOrOpenDb(dbName)
+      break
+
+    case 'lab-local':
+    case 'cloud-reach':
+    default:
+      throw new Error ('only electron-browser-local database at present...')
+    // lint, huh...
+    // break
+  }
+  return db
+}
+
+// *todo* n.b. this will not be a user-available call, soon and in the real Hardocs!!
 // it is dangerous, and we are providing temporarily only to make development modeling experiments easy
 // *todo* it will be removed soon, finding a place on the protected cloud side only
 const clearDatabase = (dbName = 'hardocs-projects') => {
@@ -185,7 +191,7 @@ const listOwnerProjects =  (owner = '', dbName = 'hardocs-projects') => {
     const db = createOrOpenDatabase(dbName)
     getStatusFromDb(db)
       .then (result => {
-        console.log('loadFromDatabase:status: ' + JSON.stringify(result))
+        console.log('loadProjectFromDatabase:status: ' + JSON.stringify(result))
       })
       .then (() => {
         // const key = keyFromParts(owner, '*')
@@ -215,8 +221,8 @@ const keyFromParts = (owner, project) => {
 
 export {
   createOrOpenDatabase,
-  loadFromDatabase,
-  storeToDatabase,
+  loadProjectFromDatabase,
+  storeProjectToDatabase,
   clearDatabase,
   getStatusOfDb,
   listOwnerProjects,

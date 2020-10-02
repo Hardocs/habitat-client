@@ -1,8 +1,8 @@
 // expose the habitat database modules for npm
 
 import {
-  storeToDatabase,
-  loadFromDatabase,
+  storeProjectToDatabase,
+  loadProjectFromDatabase,
   clearDatabase,
   getStatusOfDb,
   listOwnerProjects,
@@ -28,8 +28,8 @@ import {
 } from './modules/habitat-cloud'
 
 const habitatDb = {
-  storeToDatabase,
-  loadFromDatabase,
+  storeProjectToDatabase,
+  loadProjectFromDatabase,
   clearDatabase,
   getStatusOfDb,
   listOwnerProjects,
