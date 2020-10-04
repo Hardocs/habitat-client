@@ -27,6 +27,9 @@ const doRequest = (commandPath = '/get--wut-login-identity') => {
     case 'db-exists':
       result = dbExists(decodeURIComponent(segments[1]))
       break
+    case 'initialize-cloud':
+      result = initializeCloud(segments[1])
+      break
     default:
       console.log('doRequest: defaulting, no match')
       result = { ok: false, msg: 'No soap, no capability like: ' + commandPath }
@@ -82,7 +85,7 @@ const createOwner = (dbName, url) => {
   console.log('client requesting cloud create owner: ' + dbName + ', url: ' + url)
   const body = {
     name: dbName,
-    cmd: url,
+    cmd: 'discovery',
     json: true
   }
   return fetch(url, {
@@ -167,6 +170,49 @@ const assureRemoteLogin = (dbName) => {
         }
       })
   })
+}
+
+const initializeCloud = (url) => {
+
+  let body = {}
+  try {
+    url = decodeURIComponent(url) + '/habitat-request'
+    console.log('client requesting cloud initialize: ' + url)
+    body = {
+      name: 'initializing', // *todo* sort out meanings and/or english for command
+      cmd: 'initializeHabitat',
+      json: true
+    }
+  } catch (e) {
+    console.log('initial catch' + 'initializeCloud:error: ' + e)
+    return new Promise.reject({ok: false, msg: 'initializeCloud:error: ' + e})
+  }
+
+  return fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
+    headers: new Headers({
+      'Content-Type': 'application/json', // 'text/plain'
+    }),
+  })
+    .then(result => {  // fetch returns a Result object, must decode
+      const type = result.headers.get('Content-Type')
+      console.log ('result content type: ' + type)
+      if (type.includes('text/plain')) {
+        return result.text()
+      } else {
+        return result.json()
+      }
+    })
+    .then(result => {
+      console.log('fetch result: ' + JSON.stringify(result))
+      return result
+    })
+    .catch(err => {
+      console.log('fetch err: ' + JSON.stringify(err))
+      return err
+    })
 }
 
 export {

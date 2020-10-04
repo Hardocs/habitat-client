@@ -51,9 +51,9 @@ const habitatLocal = {
   deleteNodeCookies
 }
 
-const habitat = {
+const habitatCloud = {
   doRequest,
   assureRemoteLogin
 }
 
-export { habitat, habitatDb, habitatLocal }
+export { habitatCloud, habitatDb, habitatLocal }
