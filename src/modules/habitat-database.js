@@ -13,7 +13,7 @@
 // in event time, not clock time. Thus we reflect this back, and the promise
 // eventual results are put right into the UX data, to be immediately displayed.
 
-// we never use async/await, because we want the UX to respond,not block. That its
+// we never use async/await, because we want the UX to respond, not block. That its
 // viewed data comes later after action to prepare for it, is natural, is expected.
 
 import {

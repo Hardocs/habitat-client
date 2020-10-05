@@ -1,6 +1,6 @@
 {
   "name": "@hardocs-project/habitat-client",
-  "version": "0.5.27",
+  "version": "0.5.28",
   "description": "Habitat Client API",
   "main": "lib/index.js",
   "sideEffects": false,
@@ -24,7 +24,7 @@
     "pouchdb-find": "^7.2.2",
     "pouchdb-promise": "6.2.0",
     "pouchdb-upsert": "^2.2.0",
-    "uuid": "^8.3.0"
+    "uuid": "^8.3.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.5.5",
