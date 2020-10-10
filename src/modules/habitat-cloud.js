@@ -9,26 +9,24 @@ import {createOrOpenDatabase} from './habitat-database';
 // it's critical to have PouchDb's fetch(), to get our auth cookies through when doing _commands_
 import { fetch } from 'pouchdb-fetch/lib/index-browser.es'
 
-const doRequest = (commandPath = '/get--wut-login-identity') => {
-  console.log('commandHabitat: ' + commandPath)
+const doRequest = (command = 'get--login-identity', url, args = {}) => {
+  console.log('commandHabitat: ' + command)
 
   // something like the structure habitat-hd will use
   let result = {}
-  const segments = commandPath.split('/')
-  console.log('doRequest:segments: ' + JSON.stringify(segments))
 
-  switch (segments[0]) {
+  switch (command) {
     case 'get-login-identity':
       result = getLoginIdentity()
       break
     case 'create-owner':
-      result = createOwner(segments[1], segments[2])
+      result = createOwner(url, args.owner)
       break
     case 'db-exists':
-      result = dbExists(decodeURIComponent(segments[1]))
+      result = dbExists(decodeURIComponent(url))
       break
     case 'initialize-cloud':
-      result = initializeCloud(segments[1])
+      result = initializeCloud(url)
       break
     default:
       console.log('doRequest: defaulting, no match')
@@ -78,29 +76,28 @@ const getLoginIdentity = (dummyName = 'ggl/narrationsd') => {
 //
 // These notes will move along with the code, at such time that we modularize
 // the overall cloud command abilities.
-const createOwner = (dbName, url) => {
-  // *todo* convenience before the more competent habitat-hd implementation
-  dbName = decodeURIComponent(dbName)
-  url = decodeURIComponent(url) + '/habitat-request'
-  console.log('client requesting cloud create owner: ' + dbName + ', url: ' + url)
+const createOwner = (url, identity) => {
+  console.log('client requesting cloud create owner: ' + identity + ', url: ' + url)
+
+  url += '/habitat-request'
   const body = {
-    name: dbName,
-    cmd: 'discovery',
+    name: 'create owner: ' + identity, // *todo* sort out meanings and/or english for command
+    cmd: 'createOwner',
+    owner: identity,
     json: true
   }
+
   return fetch(url, {
     method: 'POST',
     body: JSON.stringify(body),
     credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
     headers: new Headers({
-      'Content-Type': 'application/json', // 'text/plain'
+      'Content-Type': 'application/json',
     }),
   })
     .then(result => {
-      // console.log ('result: ' + JSON.stringify(result))
-      // console.log ('result raw: ' + result)
       const type = result.headers.get('Content-Type')
-      console.log ('result content type: ' + type)
+      console.log('result content type: ' + type)
       if (type.includes('text/plain')) {
         return result.text()
       } else {
@@ -109,12 +106,16 @@ const createOwner = (dbName, url) => {
     })
     .then(result => {
       if (typeof result !== 'object') {
-        return { ok: true, msg: 'Created owner: ' +
-            ', (string) ' + result, dbName: dbName}
-      } else {
-        return { ok: result.ok, msg: 'Created owner: ' + dbName +
-            ', ' + result.msg, dbName: dbName}
+        return {
+          ok: true, msg: 'Created owner: ' +
+            ', (string) ' + result, dbName: dbName
         }
+      } else {
+        return {
+          ok: result.ok, msg: 'Created owner: ' + dbName +
+            ', ' + result.msg, dbName: dbName
+        }
+      }
     })
     .catch(err => {
       console.log('createOwner:error ' + err)
@@ -125,6 +126,51 @@ const createOwner = (dbName, url) => {
 const dbExists = (dbName) => {
   // *todo* convenience before the habitat-hd implementation
   return { ok: true, msg: dbName + ' isn\'t present', dbExists: false }
+}
+
+const initializeCloud = (url) => {
+
+  let body = {}
+  url += '/habitat-request'
+
+  // try {
+  //   url = decodeURIComponent(url) + '/habitat-request'
+  console.log('client requesting cloud initialize: ' + url)
+  body = {
+    name: 'initializing', // *todo* sort out meanings and/or english for command
+    cmd: 'initializeHabitat',
+    json: true
+  }
+  // } catch (e) {
+  //   console.log('initial catch' + 'initializeCloud:error: ' + e)
+  //   return new Promise.reject({ok: false, msg: 'initializeCloud:error: ' + e})
+  // }
+
+  return fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
+    headers: new Headers({
+      'Content-Type': 'application/json', // 'text/plain'
+    }),
+  })
+    .then(result => {  // fetch returns a Result object, must decode
+      const type = result.headers.get('Content-Type')
+      console.log ('result content type: ' + type)
+      if (type.includes('text/plain')) {
+        return result.text()
+      } else {
+        return result.json()
+      }
+    })
+    .then(result => {
+      console.log('fetch result: ' + JSON.stringify(result))
+      return result
+    })
+    .catch(err => {
+      console.log('fetch err: ' + JSON.stringify(err))
+      return err
+    })
 }
 
 const assureRemoteLogin = (dbName) => {
@@ -170,49 +216,6 @@ const assureRemoteLogin = (dbName) => {
         }
       })
   })
-}
-
-const initializeCloud = (url) => {
-
-  let body = {}
-  try {
-    url = decodeURIComponent(url) + '/habitat-request'
-    console.log('client requesting cloud initialize: ' + url)
-    body = {
-      name: 'initializing', // *todo* sort out meanings and/or english for command
-      cmd: 'initializeHabitat',
-      json: true
-    }
-  } catch (e) {
-    console.log('initial catch' + 'initializeCloud:error: ' + e)
-    return new Promise.reject({ok: false, msg: 'initializeCloud:error: ' + e})
-  }
-
-  return fetch(url, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
-    headers: new Headers({
-      'Content-Type': 'application/json', // 'text/plain'
-    }),
-  })
-    .then(result => {  // fetch returns a Result object, must decode
-      const type = result.headers.get('Content-Type')
-      console.log ('result content type: ' + type)
-      if (type.includes('text/plain')) {
-        return result.text()
-      } else {
-        return result.json()
-      }
-    })
-    .then(result => {
-      console.log('fetch result: ' + JSON.stringify(result))
-      return result
-    })
-    .catch(err => {
-      console.log('fetch err: ' + JSON.stringify(err))
-      return err
-    })
 }
 
 export {
