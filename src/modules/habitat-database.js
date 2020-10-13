@@ -31,7 +31,7 @@ import {
 // to match the cloud side now emerging. Signatures have already changed,
 // noting it's Projects they deal with.
 const loadProjectFromDatabase =  (owner = 'hardOwner', project = 'firstProject',
-                           dbName = 'hardocs-projects', ) => {
+                           dbName = 'habitat-projects', ) => {
   return new Promise ((resolve, reject) => {
     const db = createOrOpenDatabase(dbName)
     getStatusFromDb(db)
@@ -52,7 +52,7 @@ const loadProjectFromDatabase =  (owner = 'hardOwner', project = 'firstProject',
 }
 
 const storeProjectToDatabase = (owner, project,
-                        data = {}, dbName = 'hardocs-projects') => {
+                        data = {}, dbName = 'habitat-projects') => {
 
   return new Promise ((resolve, reject) => {
     const db = createOrOpenDatabase(dbName)
