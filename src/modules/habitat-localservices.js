@@ -94,7 +94,7 @@ const loadContentFromFilePath = (filePath, options = 'utf8') => {
 // selectContentFromFolder() just above.  Such calls use the arguments.
 //
 // In the Electron implementation itself, typesNames isn't actually
-// used at present, but we're preparedfor when it may be.
+// used at present, but we're prepared for when it may be.
 
 const chooseFolderForUse = (typesName = 'Choose a Folder',
                             properties = [ 'openDirectory']) => {
