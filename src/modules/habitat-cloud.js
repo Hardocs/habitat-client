@@ -22,6 +22,9 @@ const doRequest = (command = 'get--login-identity', url, args = {}) => {
     case 'create-owner':
       result = createOwner(url, args.owner)
       break
+    case 'create-project':
+      result = createProject(url, args.owner)
+      break
     case 'db-exists':
       result = dbExists(decodeURIComponent(url))
       break
@@ -81,6 +84,56 @@ const createOwner = (url, identity) => {
     json: true
   }
 
+  // *todo* preliminaries only so far
+  return fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
+    headers: new Headers({
+      'Content-Type': 'application/json',
+    }),
+  })
+    .then(result => {
+      const type = result.headers.get('Content-Type')
+      console.log('result content type: ' + type)
+      if (type.includes('text/plain')) {
+        return result.text()
+      } else {
+        return result.json()
+      }
+    })
+    .then(result => {
+      if (typeof result !== 'object') {
+        return {
+          ok: true, msg: 'Created owner: ' +
+            ', (string) ' + result, dbName: dbName
+        }
+      } else {
+        return {
+          ok: result.ok, msg: 'Created owner: ' + dbName +
+            ', ' + result.msg, dbName: dbName
+        }
+      }
+    })
+    .catch(err => {
+      console.log('createOwner:error ' + err)
+      return {ok: false, msg: 'cmd:createOwner:error: ' + err, dbName: dbName}
+    })
+}
+
+const createProject = (url, project, identity) => {
+  console.log('client requesting cloud create project: ' + project + ', owner: ' + identity + ', url: ' + url)
+
+  url += '/habitat-request'
+  const body = {
+    name: 'create project: ' + project + ', owner: ' + identity, // *todo* sort out meanings and/or english for command
+    cmd: 'createOwner',
+    owner: identity,
+    project: project,
+    json: true
+  }
+
+  // *todo* preliminaries only so far
   return fetch(url, {
     method: 'POST',
     body: JSON.stringify(body),
