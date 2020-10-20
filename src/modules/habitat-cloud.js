@@ -20,7 +20,7 @@ const doRequest = (command = 'get--login-identity', url, args = {}) => {
       result = getLoginIdentity(url)
       break
     case 'create-owner':
-      result = createOwner(url, args.owner)
+      result = createOwner(url, args.owner, args.agent)
       break
     case 'create-project':
       result = createProject(url, args.owner)
@@ -73,14 +73,15 @@ const doRequest = (command = 'get--login-identity', url, args = {}) => {
 //
 // These notes will move along with the code, at such time that we modularize
 // the overall cloud command abilities.
-const createOwner = (url, identity) => {
+const createOwner = (url, owner, agent) => {
   console.log('client requesting cloud create owner: ' + identity + ', url: ' + url)
 
   url += '/habitat-request'
   const body = {
-    name: 'create owner: ' + identity, // *todo* sort out meanings and/or english for command
-    cmd: 'createOwner',
-    owner: identity,
+    name: 'create owner: ' + owner, // *todo* sort out meanings and/or english for command
+    cmd: 'createLocation', // *todo* settle this. Location all around better? Or third word?
+    agent: agent,
+    locationName: owner,
     json: true
   }
 
@@ -106,18 +107,18 @@ const createOwner = (url, identity) => {
       if (typeof result !== 'object') {
         return {
           ok: true, msg: 'Created owner: ' +
-            ', (string) ' + result, dbName: dbName
+            ', (string) ' + result
         }
       } else {
         return {
-          ok: result.ok, msg: 'Created owner: ' + dbName +
-            ', ' + result.msg, dbName: dbName
+          ok: result.ok, msg: 'Creating owner: ' + owner +
+            ', ' + result.msg
         }
       }
     })
     .catch(err => {
       console.log('createOwner:error ' + err)
-      return {ok: false, msg: 'cmd:createOwner:error: ' + err, dbName: dbName}
+      return {ok: false, msg: 'cmd:createOwner:error: ' + err }
     })
 }
 
@@ -155,18 +156,18 @@ const createProject = (url, project, identity) => {
       if (typeof result !== 'object') {
         return {
           ok: true, msg: 'Created owner: ' +
-            ', (string) ' + result, dbName: dbName
+            ', (string) ' + result, project: project
         }
       } else {
         return {
-          ok: result.ok, msg: 'Created owner: ' + dbName +
-            ', ' + result.msg, dbName: dbName
+          ok: result.ok, msg: 'Created owner: ' + project +
+            ', ' + result.msg, project: project
         }
       }
     })
     .catch(err => {
       console.log('createOwner:error ' + err)
-      return {ok: false, msg: 'cmd:createOwner:error: ' + err, dbName: dbName}
+      return {ok: false, msg: 'cmd:createOwner:error: ' + err, project: project}
     })
 }
 
