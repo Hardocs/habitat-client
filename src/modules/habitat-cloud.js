@@ -23,7 +23,7 @@ const doRequest = (command = 'get--login-identity', url, args = {}) => {
       result = createOwner(url, args.owner, args.agent)
       break
     case 'create-project':
-      result = createProject(url, args.owner)
+      result = createProject(url, args.project, args.owner, args.identity)
       break
     case 'db-exists':
       result = dbExists(decodeURIComponent(url))
@@ -106,7 +106,7 @@ const createOwner = (url, owner, agent) => {
     .then(result => {
       if (typeof result !== 'object') {
         return {
-          ok: true, msg: 'Created owner: ' +
+          ok: true, msg: 'Creating owner: ' +
             ', (string) ' + result
         }
       } else {
@@ -122,15 +122,18 @@ const createOwner = (url, owner, agent) => {
     })
 }
 
-const createProject = (url, project, identity) => {
-  console.log('client requesting cloud create project: ' + project + ', owner: ' + identity + ', url: ' + url)
+const createProject = (url, project, owner, identity) => {
+  console.log('client requesting cloud create project: ' + project + ', owner: ' + identity +
+    ', identity: ' + identity + ', url: ' + url)
 
   url += '/habitat-request'
   const body = {
-    name: 'create project: ' + project + ', owner: ' + identity, // *todo* sort out meanings and/or english for command
-    cmd: 'createOwner',
-    owner: identity,
+    name: 'create project: ' + project + ', owner: ' +
+      owner + ', identity: ' + identity, // *todo* sort out meanings and/or english for command
+    cmd: 'createProject',
     project: project,
+    owner: owner,
+    identity: identity,
     json: true
   }
 
@@ -155,19 +158,19 @@ const createProject = (url, project, identity) => {
     .then(result => {
       if (typeof result !== 'object') {
         return {
-          ok: true, msg: 'Created owner: ' +
-            ', (string) ' + result, project: project
+          ok: true,
+          msg: 'Creating project: ' + ', (string) ' + result, project: project
         }
       } else {
         return {
-          ok: result.ok, msg: 'Created owner: ' + project +
-            ', ' + result.msg, project: project
+          ok: result.ok,
+          msg: 'Creating project: ' + project + ', ' + result.msg, project: project
         }
       }
     })
     .catch(err => {
       console.log('createOwner:error ' + err)
-      return {ok: false, msg: 'cmd:createOwner:error: ' + err, project: project}
+      return {ok: false, msg: 'cmd:createProject:error: ' + err, project: project}
     })
 }
 
