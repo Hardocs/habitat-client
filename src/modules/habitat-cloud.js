@@ -19,11 +19,11 @@ const doRequest = (command = 'get--login-identity', url, args = {}) => {
     case 'get-login-identity':
       result = getLoginIdentity(url)
       break
-    case 'create-owner':
-      result = createOwner(url, args.owner, args.agent)
+    case 'create-location':
+      result = createLocation(url, args.location, args.identity)
       break
     case 'create-project':
-      result = createProject(url, args.project, args.owner, args.identity)
+      result = createProject(url, args.project, args.location, args.identity)
       break
     case 'db-exists':
       result = dbExists(decodeURIComponent(url))
@@ -73,15 +73,15 @@ const doRequest = (command = 'get--login-identity', url, args = {}) => {
 //
 // These notes will move along with the code, at such time that we modularize
 // the overall cloud command abilities.
-const createOwner = (url, owner, agent) => {
-  console.log('client requesting cloud create owner: ' + identity + ', url: ' + url)
+const createLocation = (url, location, identity) => {
+  console.log('client requesting cloud create location: ' + identity + ', url: ' + url)
 
   url += '/habitat-request'
   const body = {
-    name: 'create owner: ' + owner, // *todo* sort out meanings and/or english for command
+    name: 'create location: ' + location, // *todo* sort out meanings and/or english for command
     cmd: 'createLocation', // *todo* settle this. Location all around better? Or third word?
-    agent: agent,
-    locationName: owner,
+    identity: identity,
+    location: location,
     json: true
   }
 
@@ -106,33 +106,33 @@ const createOwner = (url, owner, agent) => {
     .then(result => {
       if (typeof result !== 'object') {
         return {
-          ok: true, msg: 'Creating owner: ' +
+          ok: true, msg: 'Creating location: ' +
             ', (string) ' + result
         }
       } else {
         return {
-          ok: result.ok, msg: 'Creating owner: ' + owner +
+          ok: result.ok, msg: 'Creating location: ' + location +
             ', ' + result.msg
         }
       }
     })
     .catch(err => {
-      console.log('createOwner:error ' + err)
-      return {ok: false, msg: 'cmd:createOwner:error: ' + err }
+      console.log('createLocation:error ' + err)
+      return {ok: false, msg: 'cmd:createLocation:error: ' + err }
     })
 }
 
-const createProject = (url, project, owner, identity) => {
-  console.log('client requesting cloud create project: ' + project + ', owner: ' + identity +
+const createProject = (url, project, location, identity) => {
+  console.log('client requesting cloud create project: ' + project + ', location: ' + identity +
     ', identity: ' + identity + ', url: ' + url)
 
   url += '/habitat-request'
   const body = {
-    name: 'create project: ' + project + ', owner: ' +
-      owner + ', identity: ' + identity, // *todo* sort out meanings and/or english for command
+    name: 'create project: ' + project + ', location: ' +
+      location + ', identity: ' + identity, // *todo* sort out meanings and/or english for command
     cmd: 'createProject',
     project: project,
-    owner: owner,
+    location: location,
     identity: identity,
     json: true
   }
@@ -169,7 +169,7 @@ const createProject = (url, project, owner, identity) => {
       }
     })
     .catch(err => {
-      console.log('createOwner:error ' + err)
+      console.log('createLocation:error ' + err)
       return {ok: false, msg: 'cmd:createProject:error: ' + err, project: project}
     })
 }
