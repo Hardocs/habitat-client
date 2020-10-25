@@ -5,7 +5,7 @@ import {
   loadProjectFromDatabase,
   clearDatabase,
   getStatusOfDb,
-  listOwnerProjects,
+  listLocationProjects,
   replicateDatabase
 } from './modules/habitat-database'
 
@@ -32,7 +32,7 @@ const habitatDb = {
   loadProjectFromDatabase,
   clearDatabase,
   getStatusOfDb,
-  listOwnerProjects,
+  listLocationProjects,
   replicateDatabase,
   assureRemoteLogin,
   doRequest

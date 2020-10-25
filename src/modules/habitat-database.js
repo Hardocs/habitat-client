@@ -185,8 +185,8 @@ const clearDatabase = (dbName = 'hardocs-projects') => {
   })
 }
 
-const listOwnerProjects =  (owner = '', dbName = 'hardocs-projects') => {
-  console.log('listOwnerProjects not yet using owner: ' + owner)
+const listLocationProjects =  (owner = '', dbName = 'hardocs-projects') => {
+  console.log('listLocationProjects not yet using owner: ' + owner)
   return new Promise ((resolve, reject) => {
     const db = createOrOpenDatabase(dbName)
     getStatusFromDb(db)
@@ -212,6 +212,12 @@ const replicateDatabase = (from, to, options = {}) => {
   const toDb = createOrOpenDatabase(to)
   // *todo* a little status checking Promise surround here...pronto
 
+  // *todo* temporary replication control discovery next
+  options = Object.assign(options, {
+    filter: 'projects/onlyTheLonely'
+  })
+  console.log('Replicate options: ' + JSON.stringify(options))
+
   return replicateDb(fromDb, toDb, options)
 }
 
@@ -225,7 +231,7 @@ export {
   storeProjectToDatabase,
   clearDatabase,
   getStatusOfDb,
-  listOwnerProjects,
+  listLocationProjects,
   replicateDatabase,
   keyFromParts
 }
