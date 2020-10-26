@@ -9,8 +9,8 @@ import {createOrOpenDatabase} from './habitat-database';
 // it's critical to have PouchDb's fetch(), to get our auth cookies through when doing _commands_
 import { fetch } from 'pouchdb-fetch/lib/index-browser.es'
 
-const doRequest = (command = 'get--login-identity', url, args = {}) => {
-  console.log('commandHabitat: ' + command)
+const doRequest = (command = 'get-login-identity', url, args = {}) => {
+  console.log('habitat-client:doRequest: : ' + command)
 
   // something like the structure habitat-hd will use
   let result = {}
@@ -137,6 +137,7 @@ const createProject = (url, project, location, identity) => {
     json: true
   }
 
+  console.log('createProject:body: ' + JSON.stringify(body))
   // *todo* preliminaries only so far
   return fetch(url, {
     method: 'POST',
