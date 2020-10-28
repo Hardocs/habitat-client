@@ -212,10 +212,6 @@ const replicateDatabase = (from, to, options = {}) => {
   const toDb = createOrOpenDatabase(to)
   // *todo* a little status checking Promise surround here...pronto
 
-  // *todo* temporary replication control discovery next
-  options = Object.assign(options, {
-    filter: 'projects/onlyTheLonely'
-  })
   console.log('Replicate options: ' + JSON.stringify(options))
 
   return replicateDb(fromDb, toDb, options)
