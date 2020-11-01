@@ -19,19 +19,19 @@ const doRequest = (command = 'get-login-identity', url, args = {}) => {
   let result = {}
 
   switch (command) {
-    case 'get-login-identity':
+    case 'getLoginIdentity':
       result = getLoginIdentity(url)
       break
-    case 'create-location':
+    case 'createLocation':
       result = createLocation(url, args.location, args.identity)
       break
-    case 'create-project':
+    case 'createProject':
       result = createProject(url, args.project, args.location, args.identity)
       break
-    case 'db-exists':
+    case 'dbExists':
       result = dbExists(decodeURIComponent(url))
       break
-    case 'initialize-cloud':
+    case 'initializeCloud':
       result = initializeCloud(url)
       break
     default:

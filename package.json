@@ -5,7 +5,7 @@
   "main": "lib/index.js",
   "sideEffects": false,
   "scripts": {
-    "dev": "npm link",
+    "dev": "yarn prepublish",
     "prepublish": "babel src -d lib",
     "drypub": "npm publish --access public --dry-run",
     "vpub": "npm publish --registry http://localhost:4873",
@@ -22,7 +22,6 @@
     "pouchdb": "^7.2.2",
     "pouchdb-fetch": "^7.2.2",
     "pouchdb-find": "^7.2.2",
-    "pouchdb-promise": "6.2.0",
     "pouchdb-upsert": "^2.2.0",
     "uuid": "^8.3.1"
   },
