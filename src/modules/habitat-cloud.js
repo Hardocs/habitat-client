@@ -2,12 +2,15 @@
 // these are habitat-hd abilities, rather than CloudDb itself
 // *todo* open calls one way to do it, but a single call as next, and path strings is better
 
-import {getStatusFromDb} from './transport-ifc';
+import {getStatusFromDb, safeEnv} from './transport-ifc';
 import {getNodeCookies, loginViaModal, servicesLog} from './habitat-localservices';
 import {createOrOpenDatabase} from './habitat-database';
 
 // it's critical to have PouchDb's fetch(), to get our auth cookies through when doing _commands_
 import { fetch } from 'pouchdb-fetch/lib/index-browser.es'
+
+const publicCloud = safeEnv(process.env.PUBLIC_CLOUD,
+  'https://hd.narrationsd.com/hard-api/habitat-public')
 
 const doRequest = (command = 'get-login-identity', url, args = {}) => {
   console.log('habitat-client:doRequest: : ' + command)
@@ -252,7 +255,7 @@ function habitatRequest (url, body) {
   });
 }
 
-const assureRemoteLogin = (dbName) => {
+const assureRemoteLogin = (dbName = publicCloud) => {
   return new Promise ((resolve, reject) => {
     const db = createOrOpenDatabase(dbName)
     getStatusFromDb(db)

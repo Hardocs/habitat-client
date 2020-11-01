@@ -83,6 +83,13 @@ const upsertJsonToDb = (db, query, data) => {
   // when code is provided, we'll also properly remove the lint disable preceding
 }
 
+const safeEnv = (value, preset) => { // don't use words like default...
+
+  return typeof value !== 'undefined' && value
+    ? value
+    : preset
+}
+
 export {
   createOrOpenDb,
   getStatusFromDb,
@@ -96,6 +103,7 @@ export {
   removeJsonFromDb,
   replicateDb,
   compactDb,
-  destroyDb
+  destroyDb,
+  safeEnv
 }
 
