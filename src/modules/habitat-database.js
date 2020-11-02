@@ -144,10 +144,9 @@ const createOrOpenDatabase = (dbName, locale = 'electron-browser') => {
       db = createOrOpenDb(dbName)
       break
 
-    case 'lab-local':
     case 'cloud-reach':
     default:
-      throw new Error ('only electron-browser-local database at present...')
+      throw new Error ('only electron-browser-local database from app...')
     // lint, huh...
     // break
   }
@@ -207,12 +206,47 @@ const listLocationProjects =  (owner = '', dbName = 'hardocs-projects') => {
   })
 }
 
+const saveHardocsObject = (dataObject, location, project) => {
+
+  const db = createOrOpenDatabase(location)
+  let errLoc = 'db-get-info'
+
+  return db.info ()
+    .then (result => {
+      // checkLocationInCloud(location) // *todo* when we decide about this
+      errLoc = 'db-get-prior'
+      return getJsonFromDb(db, project)
+    })
+    .catch(err => {
+      console.log ('no initial project: ' + JSON.stringify(err))
+      return null
+    })
+    .then(prior => {
+      errLoc = 'db-put-project'
+      console.log('getJsonFromDb:prior: ' + JSON.stringify(prior))
+      let freshProject = {}
+      if (prior) {
+        freshProject = Object.assign (prior, dataObject)
+      } else {
+        freshProject = Object.assign (dataObject, {
+          _id: project
+        })
+      }
+      console.log('saveHardocsObject:freshProject: ' + JSON.stringify(freshProject))
+      return putJsonToDb(db, freshProject)
+    })
+    .catch (err => {
+      const msg = 'saveHardocsObject:' + errLoc + ':error: ' + err
+      console.log (msg)
+      return { ok: false, msg: msg }
+    })
+}
+
 const replicateDatabase = (from, to, options = {}) => {
   const fromDb = createOrOpenDatabase(from)
   const toDb = createOrOpenDatabase(to)
-  // *todo* a little status checking Promise surround here...pronto
 
-  console.log('Replicate options: ' + JSON.stringify(options))
+  // *todo* a little status checking Promise surround here...pronto
 
   return replicateDb(fromDb, toDb, options)
 }
@@ -228,6 +262,7 @@ export {
   clearDatabase,
   getStatusOfDb,
   listLocationProjects,
+  saveHardocsObject,
   replicateDatabase,
   keyFromParts
 }
