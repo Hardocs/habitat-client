@@ -23,12 +23,16 @@ const doRequest = (command = 'get-login-identity', url, args = {}) => {
       result = getLoginIdentity(url)
       break
     case 'createLocation':
-      result = createLocation(url, args.location, args.identity)
+      result = createLocation(url, args)
       break
     case 'createProject':
-      result = createProject(url, args.project, args.location, args.identity)
+      result = createProject(url, args)
+      break
+    case 'addProjectMember':
+      result = addProjectMember(url, args)
       break
     case 'dbExists':
+      // *todo* isn't this decode a leftover; do without?
       result = dbExists(decodeURIComponent(url))
       break
     case 'initializeCloud':
@@ -76,7 +80,7 @@ const doRequest = (command = 'get-login-identity', url, args = {}) => {
 //
 // These notes will move along with the code, at such time that we modularize
 // the overall cloud command abilities.
-const createLocation = (url, location, identity) => {
+const createLocation = (url, { location, identity }) => {
   console.log('client requesting cloud create location: ' + identity + ', url: ' + url)
 
   url += '/habitat-request'
@@ -125,7 +129,7 @@ const createLocation = (url, location, identity) => {
     })
 }
 
-const createProject = (url, project, location, identity) => {
+const createProject = (url, { project, location, identity }) => {
   console.log('client requesting cloud create project: ' + project + ', location: ' + identity +
     ', identity: ' + identity + ', url: ' + url)
 
@@ -163,18 +167,71 @@ const createProject = (url, project, location, identity) => {
       if (typeof result !== 'object') {
         return {
           ok: true,
-          msg: 'Creating project: ' + ', (string) ' + result, project: project
+          msg: 'Creating project: ' + ', (string) ' + result
         }
       } else {
         return {
           ok: result.ok,
-          msg: 'Creating project: ' + project + ', ' + result.msg, project: project
+          msg: 'Creating project: ' + project + ', ' + result.msg
         }
       }
     })
     .catch(err => {
-      console.log('createLocation:error ' + err)
+      console.log('createProject:error ' + err)
       return {ok: false, msg: 'cmd:createProject:error: ' + err, project: project}
+    })
+}
+
+const addProjectMember = (url, { project, location, member }) => {
+  console.log('client requesting cloud add project member: ' + project + ', location: ' + location +
+    ', member: ' + member + ', url: ' + url)
+
+  url += '/habitat-request'
+  const body = {
+    name: 'add project member: ' + project + ', location: ' +
+      location + ', member: ' + member, // *todo* sort out meanings and/or english for command
+    cmd: 'addProjectMember',
+    project: project,
+    location: location,
+    member: member,
+    json: true
+  }
+
+  console.log('addProjectMember:body: ' + JSON.stringify(body))
+  // *todo* preliminaries only so far
+  return fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
+    headers: new Headers({
+      'Content-Type': 'application/json',
+    }),
+  })
+    .then(result => {
+      const type = result.headers.get('Content-Type')
+      console.log('result content type: ' + type)
+      if (type.includes('text/plain')) {
+        return result.text()
+      } else {
+        return result.json()
+      }
+    })
+    .then(result => {
+      if (typeof result !== 'object') {
+        return {
+          ok: true,
+          msg: 'Added member: ' + ', (string) ' + result
+        }
+      } else {
+        return {
+          ok: result.ok,
+          msg: 'Added member: ' + member + ', ' + result.msg
+        }
+      }
+    })
+    .catch(err => {
+      console.log('addProjectMember:error ' + err)
+      return {ok: false, msg: 'cmd:addProjectMember:error: ' + err, member: member}
     })
 }
 
@@ -257,7 +314,7 @@ function habitatRequest (url, body) {
 
 const assureRemoteLogin = (dbName = publicCloud) => {
   return new Promise ((resolve, reject) => {
-    const db = createOrOpenDatabase(dbName)
+    const db = createOrOpenDatabase(dbName, { skip_setup: true }) // don't attempt create
     getStatusFromDb(db)
       .then (result => {
         servicesLog('assureRemoteLogin:checkStatus: ' + JSON.stringify(result))

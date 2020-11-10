@@ -1,13 +1,12 @@
 // expose the habitat database modules for npm
 
 import {
-  storeProjectToDatabase,
-  loadProjectFromDatabase,
-  clearDatabase,
   getStatusOfDb,
   listLocationProjects,
+  loadHardocsObject,
+  storeHardocsObject,
   replicateDatabase,
-  saveHardocsObject
+  clearDatabase,
 } from './modules/habitat-database'
 
 import {
@@ -29,15 +28,12 @@ import {
 } from './modules/habitat-cloud'
 
 const habitatDb = {
-  storeProjectToDatabase,
-  loadProjectFromDatabase,
-  clearDatabase,
   getStatusOfDb,
   listLocationProjects,
+  storeHardocsObject,
+  loadHardocsObject,
   replicateDatabase,
-  saveHardocsObject,
-  assureRemoteLogin,
-  doRequest
+  clearDatabase,
 }
 
 const habitatLocal = {

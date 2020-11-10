@@ -27,50 +27,46 @@ import {
   servicesLog
 } from './habitat-localservices'
 
-// Both load and store are due soon to change internal implementation,
-// to match the cloud side now emerging. Signatures have already changed,
-// noting it's Projects they deal with.
-const loadProjectFromDatabase =  (owner = 'hardOwner', project = 'firstProject',
-                           dbName = 'habitat-projects', ) => {
+const loadHardocsObject =  (location = 'habitat-projects',
+                                 project = 'firstProject') => {
   return new Promise ((resolve, reject) => {
-    const db = createOrOpenDatabase(dbName)
+    const db = createOrOpenDatabase(location)
     getStatusFromDb(db)
       .then (result => {
-        console.log ('loadProjectFromDatabase:status: ' + JSON.stringify(result))
-        console.log ('loadProjectFromDatabase:key: ' + keyFromParts(owner, project))
-        return getJsonFromDb(db, keyFromParts(owner, project))
+        console.log ('loadHardocsObject:status: ' + JSON.stringify(result))
+        console.log ('loadHardocsObject:key: ' + keyFromParts(location, project))
+        return getJsonFromDb(db, project)
       })
       .then (result => {
-        console.log('loadProjectFromDatabase:result: ' + JSON.stringify(result))
+        console.log('loadHardocsObject:result: ' + JSON.stringify(result))
         resolve (result)
       })
       .catch (err => {
-        console.log ('loadProjectFromDatabase:error: ' + err)
+        console.log ('loadHardocsObject:error: ' + err)
         reject (err)
       })
   })
 }
 
-const storeProjectToDatabase = (owner, project,
-                        data = {}, dbName = 'habitat-projects') => {
+const storeHardocsObject = (location, project, data = {}) => {
 
   return new Promise ((resolve, reject) => {
-    const db = createOrOpenDatabase(dbName)
+    const db = createOrOpenDatabase(location)
     getStatusFromDb(db)
       .then (result => {
-        console.log ('storeProjectToDatabase:status: ' + JSON.stringify(result))
-        // console.log ('storeProjectToDatabase:data: ' + JSON.stringify(data))
-        return upsertProjectToDatabase(owner, project, data, db)
+        console.log ('storeHardocsObject:status: ' + JSON.stringify(result))
+        // console.log ('storeHardocsObject:data: ' + JSON.stringify(data))
+        return upsertProjectLocal(location, project, data)
       })
       .then(result => {
-        // console.log ('storeProjectToDatabase:upsert ' + JSON.stringify(result))
+        // console.log ('storeHardocsObject:upsert ' + JSON.stringify(result))
         if (!result.ok) { // errors won't throw of themselves, thus we test
           reject (result)
         }
         resolve (result)
       })
       .catch (err => {
-        console.log ('storeProjectToDatabase:error: ' + err)
+        console.log ('storeHardocsObject:error: ' + err)
         reject (err)
       })
   })
@@ -79,36 +75,34 @@ const storeProjectToDatabase = (owner, project,
 // upsert is a service needed internally, not to be exposed, as it handles a
 // particular case of store to database. Also to change implementation
 // to match emerging cloud.
-const upsertProjectToDatabase = (owner, name, data, db) => {
+const upsertProjectLocal = (location, project, data) => {
   // *todo* seems to work as expected, but is a little different from lib - check
   return new Promise ((resolve, reject) => {
-    const id = keyFromParts(owner, name)
     let projectData = {
-      _id: id,
-      owner: owner,
-      name: name,
+      _id: project,
+      location: location,
       data: data
     }
     // first, see if we have the project already
-    getJsonFromDb(db, id)
+    getJsonFromDb(location, project)
       .then(result => {
-        // console.log('upsertProjectToDatabase:getJsonFromDb: ' + JSON.stringify(result))
+        // console.log('upsertProjectLocal:getJsonFromDb: ' + JSON.stringify(result))
         if (result) {
           // console.log('assigning: data: ' + JSON.stringify(data))
           const assigned = Object.assign(result, { data: data })
-          console.log('assigned ok') // s: data: ' + JSON.stringify(data))
+          console.log('previous data; assigned ok') // data: ' + JSON.stringify(data))
           return assigned
         } else {
-          throw new Error ('upsertProjectToDatabase:getJsonFromDb:error:no prior result!')
+          throw new Error ('upsertProjectLocal:getJsonFromDb:error:no prior resul!')
         }
       })
       .catch (err => {
-        console.log('upsertProjectToDatabase: ' + err)
+        console.log('upsertProjectLocal:no earlier data, initial put. ')
         return projectData
         })
       .then(result => {
-        // console.log('upsertProjectToDatabase:tostore: ' + JSON.stringify(result))
-        return putJsonToDb(db, result)
+        // console.log('upsertProjectLocal:tostore: ' + JSON.stringify(result))
+        return putJsonToDb(location, result)
       })
       .then (result => {
         // console.log ('putJsonToDb: ' + JSON.stringify(result))
@@ -137,11 +131,11 @@ const getStatusOfDb =  (dbName = 'hardocs-projects') => {
 }
 
 
-const createOrOpenDatabase = (dbName, locale = 'electron-browser') => {
+const createOrOpenDatabase = (dbName, opts = {}, locale = 'electron-browser') => {
   let db = null
   switch(locale) {
     case 'electron-browser':
-      db = createOrOpenDb(dbName)
+      db = createOrOpenDb(dbName, opts)
       break
 
     case 'cloud-reach':
@@ -184,8 +178,8 @@ const clearDatabase = (dbName = 'hardocs-projects') => {
   })
 }
 
-const listLocationProjects =  (owner = '', dbName = 'hardocs-projects') => {
-  console.log('listLocationProjects not yet using owner: ' + owner)
+const listLocationProjects =  (location = '', dbName = 'hardocs-projects') => {
+  console.log('listLocationProjects not yet using location: ' + location)
   return new Promise ((resolve, reject) => {
     const db = createOrOpenDatabase(dbName)
     getStatusFromDb(db)
@@ -193,7 +187,7 @@ const listLocationProjects =  (owner = '', dbName = 'hardocs-projects') => {
         console.log('loadProjectFromDatabase:status: ' + JSON.stringify(result))
       })
       .then (() => {
-        // const key = keyFromParts(owner, '*')
+        // const key = keyFromParts(location, '*')
         return alldocsJsonFromDb(db, { include_docs: true })
       })
       .then (result => {
@@ -206,42 +200,6 @@ const listLocationProjects =  (owner = '', dbName = 'hardocs-projects') => {
   })
 }
 
-const saveHardocsObject = (dataObject, location, project) => {
-
-  const db = createOrOpenDatabase(location)
-  let errLoc = 'db-get-info'
-
-  return db.info ()
-    .then (result => {
-      // checkLocationInCloud(location) // *todo* when we decide about this
-      errLoc = 'db-get-prior'
-      return getJsonFromDb(db, project)
-    })
-    .catch(err => {
-      console.log ('no initial project: ' + JSON.stringify(err))
-      return null
-    })
-    .then(prior => {
-      errLoc = 'db-put-project'
-      console.log('getJsonFromDb:prior: ' + JSON.stringify(prior))
-      let freshProject = {}
-      if (prior) {
-        freshProject = Object.assign (prior, dataObject)
-      } else {
-        freshProject = Object.assign (dataObject, {
-          _id: project
-        })
-      }
-      console.log('saveHardocsObject:freshProject: ' + JSON.stringify(freshProject))
-      return putJsonToDb(db, freshProject)
-    })
-    .catch (err => {
-      const msg = 'saveHardocsObject:' + errLoc + ':error: ' + err
-      console.log (msg)
-      return { ok: false, msg: msg }
-    })
-}
-
 const replicateDatabase = (from, to, options = {}) => {
   const fromDb = createOrOpenDatabase(from)
   const toDb = createOrOpenDatabase(to)
@@ -251,18 +209,17 @@ const replicateDatabase = (from, to, options = {}) => {
   return replicateDb(fromDb, toDb, options)
 }
 
-const keyFromParts = (owner, project) => {
-  return owner + ':' + project
+const keyFromParts = (location, project) => {
+  return location + ':' + project
 }
 
 export {
   createOrOpenDatabase,
-  loadProjectFromDatabase,
-  storeProjectToDatabase,
-  clearDatabase,
   getStatusOfDb,
+  loadHardocsObject,
+  storeHardocsObject,
+  clearDatabase,
   listLocationProjects,
-  saveHardocsObject,
   replicateDatabase,
   keyFromParts
 }

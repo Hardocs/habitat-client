@@ -8,10 +8,11 @@ import { v4 as uuidv4 } from 'uuid'
 PouchDb.plugin(PouchDbFind)
 PouchDb.plugin(PouchDbUpsert)
 
-const createOrOpenDb = (dbName) => {
-  return new PouchDb(dbName, {
-    // revs_limit: 1 // *todo* easy way; much of interest to actually decide here, affects all
-  })
+const createOrOpenDb = (dbName, opts = {}) => {
+  // opts = Object.assign(opts, {
+  //   // revs_limit: 1 // *todo* easy way; much of interest to actually decide here, affects all
+  // })
+  return new PouchDb(dbName/*, opts*/)
 }
 
 const getStatusFromDb = (db) => {
