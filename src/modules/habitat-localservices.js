@@ -36,7 +36,11 @@ const rendWin = getCurrentWindow()
 // There are the other calls below for separately choosing a directory, and then
 // for loading a set of filenames from it, or for loading content of an individual file.
 
-const selectContentFromFolder = (fileExts = ['*'], typeName = 'Any Files', options = 'utf8') => {
+const selectContentFromFolder = (
+  fileExts = ['*'],
+  typeName = 'Any Files',
+  options = 'utf8'
+) => {
   return new Promise((resolve, reject) => {
     if (process.env.ORIGINAL_XDG_CURRENT_DESKTOP !== null) {
       dialog.showOpenDialog(rendWin, {
