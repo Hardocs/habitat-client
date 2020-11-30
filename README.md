@@ -1,11 +1,31 @@
 ---
 ---
 
-# Habitat Client API
+# Habitat Client API - 29 November 2020
 
-This is the client-side API for accessing 
+## Status
 
-# Development
+This is the client-side API for Habitat, the local and cloud services package for Hardocs.
+
+There are two primary versions active at present:
+
+### branch `master`
+
+This is recently set to version 6.0.0, stable and in use for various ongoing Hardocs client work. It's published and present on the npm repository, via `@hardocs-project/habitat-client@latest`.
+
+### branch `feature/clear-protocol`.
+
+This is the developmental version, recently set to separated version range from 7.0.0, which has added and revised features enabled to support the emerging Hardocs cloud services. These include the developed pattern which matches a local Hardocs object to its cloud version, enabling replication.
+
+It can be used at present only in the Hardocs Framework Application, which demonstrates these cloud-orientated facilities as currently operational, and engages their completing development.
+
+For use appropriate in that way, and for the future, it's published also on npm, via `@hardocs-project/habitat-client@alpha`
+
+## Development
+
+Using the following procedure provides a dependable and stable ability to substitute a local clone of the habitat-client instead of the current npm repository content, enabling development.
+
+Note that the npm seeming equivalent is actually quite troublesome, so this is one area where yarn has proven a useful ability. Perhaps offsetting the issues that yarn raises when changing branches of a development, where a clean, deleted yarn.lock with full re-install on the fresh package.json is required to make a working transition.
 
 - to develop, only once use `yarn link` to prepare the local cache label.
 
