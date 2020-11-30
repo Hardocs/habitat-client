@@ -25,7 +25,15 @@ For use appropriate in that way, and for the future, it's published also on npm,
 
 Using the following procedure provides a dependable and stable ability to substitute a local clone of the habitat-client instead of the current npm repository content, enabling development.
 
-Note that the npm seeming equivalent is actually quite troublesome, so this is one area where yarn has proven a useful ability. Perhaps offsetting the issues that yarn raises when changing branches of a development, where a clean, deleted yarn.lock with full re-install on the fresh package.json is required to make a working transition.
+Note that the npm seeming equivalent is actually quite troublesome, so this is one area where yarn has proven a useful ability.
+
+Another useful side of that coin would be to recognize that yarn raises problems npm does not, when changing branches of a development, where a clean, deleted yarn.lock with full re-install on the fresh package.json is required as apparently the simplest way to make a working transition.
+
+Knowing both of these, we've then had good ways to work together in our team, as features emerge and develop.
+
+### how to do it
+
+Here's the yarn procedure and results for linking, which have been giving us the nice way to have fully local development of package abilities:
 
 - to develop, only once use `yarn link` to prepare the local cache label.
 
