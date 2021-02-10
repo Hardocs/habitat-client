@@ -34,5 +34,8 @@
     "presets": [
       "@babel/preset-env"
     ]
+  },
+  "dependencies": {
+    "electron": "^9.0.0"
   }
 }
