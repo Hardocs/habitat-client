@@ -13,7 +13,7 @@ const publicCloud = safeEnv(process.env.PUBLIC_CLOUD,
   'https://hd.narrationsd.com/hard-api/habitat-public')
 
 const doRequest = (command = 'get-login-identity', url, args = {}) => {
-  console.log('habitat-client:doRequest: : ' + command)
+  console.log('habitat-client:doRequest: <' + command + '>')
 
   // something like the structure habitat-hd will use
   let result = {}
@@ -38,9 +38,12 @@ const doRequest = (command = 'get-login-identity', url, args = {}) => {
     case 'initializeCloud':
       result = initializeCloud(url)
       break
+    case 'tryGql':
+      result = tryGql(url, args)
+      break
     default:
       console.log('doRequest: defaulting, no match')
-      result = { ok: false, msg: 'No soap, no capability like: ' + commandPath }
+      result = { ok: false, msg: 'No soap, no capability like: ' + command }
       break
   }
   return result
@@ -232,6 +235,55 @@ const addProjectMember = (url, { project, location, member }) => {
     .catch(err => {
       console.log('addProjectMember:error ' + err)
       return {ok: false, msg: 'cmd:addProjectMember:error: ' + err, member: member}
+    })
+}
+
+const tryGql = (url, { query }) => {
+  console.log('client requesting cloud gql api query: ' + query)
+
+  url += '/habitat-request'
+  const body = {
+    name: 'try gql query: ' + query, // *todo* sort out meanings and/or english for command
+    cmd: 'tryGql',
+    query: query,
+    json: true
+  }
+
+  console.log('tryGql:body: ' + JSON.stringify(body))
+  // *todo* preliminaries only so far
+  return fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
+    headers: new Headers({
+      'Content-Type': 'application/json',
+    }),
+  })
+    .then(result => {
+      const type = result.headers.get('Content-Type')
+      console.log('result content type: ' + type)
+      if (type.includes('text/plain')) {
+        return result.text()
+      } else {
+        return result.json()
+      }
+    })
+    .then(result => {
+      if (typeof result !== 'object') {
+        return {
+          ok: true,
+          msg: 'gql result: ' + ', (string) ' + result
+        }
+      } else {
+        return {
+          ok: result.ok,
+          msg: 'gql result: ' + result.msg
+        }
+      }
+    })
+    .catch(err => {
+      console.log('tryGql:error ' + err)
+      return {ok: false, msg: 'cmd:tryGql:error: ' + err }
     })
 }
 
