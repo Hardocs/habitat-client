@@ -41,6 +41,9 @@ const doRequest = (command = 'get-login-identity', url, args = {}) => {
     case 'tryGql':
       result = tryGql(url, args)
       break
+    case 'publishProject':
+      result = publishProject(url, args)
+      break
     default:
       console.log('doRequest: defaulting, no match')
       result = { ok: false, msg: 'No soap, no capability like: ' + command }
@@ -278,6 +281,61 @@ const tryGql = (url, { query }) => {
         return {
           ok: result.ok,
           msg: 'gql result: ' + result.msg
+        }
+      }
+    })
+    .catch(err => {
+      console.log('tryGql:error ' + err)
+      return {ok: false, msg: 'cmd:tryGql:error: ' + err }
+    })
+}
+
+const publishProject = (url, { status, locale, project }) => {
+  console.log('client requesting publish: ' + status
+    + ' for ' + locale + ' - ' + project)
+
+  url += '/habitat-request'
+  const body = {
+    name: 'set publish state: ' + + status
+      + ' for ' + locale + ' - ' + project,
+    cmd: 'publishProject',
+    publishStatus: status,
+    location: locale,
+    project: project,
+    json: true
+  }
+
+  console.log('publishProject:body: ' + JSON.stringify(body))
+
+  return fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
+    headers: new Headers({
+      'Content-Type': 'application/json',
+    }),
+  })
+    // *todo* these blocks ought to be able to be out now, as we are
+    // set on string results?  Or both stages should be refactored into routine
+    .then(result => {
+      const type = result.headers.get('Content-Type')
+      console.log('result content type: ' + type)
+      if (type.includes('text/plain')) {
+        return result.text()
+      } else {
+        return result.json()
+      }
+    })
+    .then(result => {
+      if (typeof result !== 'object') {
+        return {
+          ok: true,
+          msg: 'publishProject result: ' + ', (string) ' + result
+        }
+      } else {
+        return {
+          ok: result.ok,
+          msg: 'publishProject result: ' + result.msg
         }
       }
     })
