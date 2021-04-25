@@ -280,13 +280,15 @@ const tryGql = (url, { query }) => {
       } else {
         return {
           ok: result.ok,
-          msg: 'gql result: ' + result.msg
+          msg: result.msg
         }
       }
     })
     .catch(err => {
+      // *todo* gql return now correct either way, but test protocol
+      // *todo* error in the chain now vs. app?
       console.log('tryGql:error ' + err)
-      return {ok: false, msg: 'cmd:tryGql:error: ' + err }
+      return {ok: false, msg: err }
     })
 }
 
