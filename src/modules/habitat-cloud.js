@@ -18,9 +18,15 @@ const doRequest = (command = 'get-login-identity', url, args = {}) => {
   // something like the structure habitat-hd will use
   let result = {}
 
+  // *todo* change each request into a promise-gated check on command, bigtime.
+  // *todo* in each check, failing gets teh message to return, thus bettering if-else
+
   switch (command) {
     case 'getLoginIdentity':
       result = getLoginIdentity(url)
+      break
+    case 'checkRoles':
+      result = checkRoles(url)
       break
     case 'createLocation':
       result = createLocation(url, args)
@@ -45,7 +51,7 @@ const doRequest = (command = 'get-login-identity', url, args = {}) => {
       result = publishProject(url, args)
       break
     default:
-      console.log('doRequest: defaulting, no match')
+      console.log('doRequest: habitat-client defaulting, no match')
       result = { ok: false, msg: 'No soap, no capability like: ' + command }
       break
   }
@@ -389,6 +395,35 @@ const getLoginIdentity = (url) => {
     json: true
   }
   console.log('client requesting login identity: ' + url + ', body: ' + JSON.stringify(body))
+
+  return habitatRequest(url, body)
+    .then(result => {  // fetch returns a Result object, must decode
+      const type = result.headers.get('Content-Type')
+      console.log ('result content type: ' + type)
+      if (type.includes('text/plain')) {
+        return result.text()
+      } else {
+        return result.json()
+      }
+    })
+    .then(result => {
+      console.log('fetch result: ' + JSON.stringify(result))
+      return result
+    })
+    .catch(err => {
+      console.log('fetch err: ' + JSON.stringify(err))
+      return err
+    })
+}
+
+const checkRoles = (url) => {
+
+  const body = {
+    name: 'check roles', // *todo* sort out meanings and/or english for command
+    cmd: 'checkRoles',
+    json: true
+  }
+  console.log('client requesting roles: ' + url + ', body: ' + JSON.stringify(body))
 
   return habitatRequest(url, body)
     .then(result => {  // fetch returns a Result object, must decode
