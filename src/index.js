@@ -2,7 +2,7 @@
 
 import {
   getStatusOfDb,
-  listLocationProjects,
+  listLocaleProjects,
   loadHardocsObject,
   storeHardocsObject,
   replicateDatabase,
@@ -29,7 +29,7 @@ import {
 
 const habitatDb = {
   getStatusOfDb,
-  listLocationProjects,
+  listLocaleProjects,
   storeHardocsObject,
   loadHardocsObject,
   replicateDatabase,

@@ -27,14 +27,14 @@ import {
   servicesLog
 } from './habitat-localservices'
 
-const loadHardocsObject =  (location = 'habitat-projects',
+const loadHardocsObject =  (locale = 'habitat-projects',
                                  project = 'firstProject') => {
   return new Promise ((resolve, reject) => {
-    const db = createOrOpenDatabase(location)
+    const db = createOrOpenDatabase(locale)
     getStatusFromDb(db)
       .then (result => {
         console.log ('loadHardocsObject:status: ' + JSON.stringify(result))
-        console.log ('loadHardocsObject:key: ' + keyFromParts(location, project))
+        console.log ('loadHardocsObject:key: ' + keyFromParts(locale, project))
         return getJsonFromDb(db, project)
       })
       .then (result => {
@@ -48,15 +48,15 @@ const loadHardocsObject =  (location = 'habitat-projects',
   })
 }
 
-const storeHardocsObject = (location, project, data = {}) => {
+const storeHardocsObject = (locale, project, data = {}) => {
 
   return new Promise ((resolve, reject) => {
-    const db = createOrOpenDatabase(location)
+    const db = createOrOpenDatabase(locale)
     getStatusFromDb(db)
       .then (result => {
         console.log ('storeHardocsObject:status: ' + JSON.stringify(result))
         // console.log ('storeHardocsObject:data: ' + JSON.stringify(data))
-        return upsertProjectLocal(location, project, data)
+        return upsertProjectLocal(locale, project, data)
       })
       .then(result => {
         // console.log ('storeHardocsObject:upsert ' + JSON.stringify(result))
@@ -75,16 +75,16 @@ const storeHardocsObject = (location, project, data = {}) => {
 // upsert is a service needed internally, not to be exposed, as it handles a
 // particular case of store to database. Also to change implementation
 // to match emerging cloud.
-const upsertProjectLocal = (location, project, data) => {
+const upsertProjectLocal = (locale, project, data) => {
   // *todo* seems to work as expected, but is a little different from lib - check
   return new Promise ((resolve, reject) => {
     let projectData = {
       _id: project,
-      location: location,
+      locale: locale,
       data: data
     }
     // first, see if we have the project already
-    getJsonFromDb(location, project)
+    getJsonFromDb(locale, project)
       .then(result => {
         // console.log('upsertProjectLocal:getJsonFromDb: ' + JSON.stringify(result))
         if (result) {
@@ -102,7 +102,7 @@ const upsertProjectLocal = (location, project, data) => {
         })
       .then(result => {
         // console.log('upsertProjectLocal:tostore: ' + JSON.stringify(result))
-        return putJsonToDb(location, result)
+        return putJsonToDb(locale, result)
       })
       .then (result => {
         // console.log ('putJsonToDb: ' + JSON.stringify(result))
@@ -178,8 +178,8 @@ const clearDatabase = (dbName = 'hardocs-projects') => {
   })
 }
 
-const listLocationProjects =  (location = '', dbName = 'hardocs-projects') => {
-  console.log('listLocationProjects not yet using location: ' + location)
+const listLocaleProjects =  (locale = '', dbName = 'hardocs-projects') => {
+  console.log('listLocaleProjects not yet using locale: ' + locale)
   return new Promise ((resolve, reject) => {
     const db = createOrOpenDatabase(dbName)
     getStatusFromDb(db)
@@ -187,7 +187,7 @@ const listLocationProjects =  (location = '', dbName = 'hardocs-projects') => {
         console.log('loadProjectFromDatabase:status: ' + JSON.stringify(result))
       })
       .then (() => {
-        // const key = keyFromParts(location, '*')
+        // const key = keyFromParts(locale, '*')
         return alldocsJsonFromDb(db, { include_docs: true })
       })
       .then (result => {
@@ -209,8 +209,8 @@ const replicateDatabase = (from, to, options = {}) => {
   return replicateDb(fromDb, toDb, options)
 }
 
-const keyFromParts = (location, project) => {
-  return location + ':' + project
+const keyFromParts = (locale, project) => {
+  return locale + ':' + project
 }
 
 export {
@@ -219,7 +219,7 @@ export {
   loadHardocsObject,
   storeHardocsObject,
   clearDatabase,
-  listLocationProjects,
+  listLocaleProjects,
   replicateDatabase,
   keyFromParts
 }

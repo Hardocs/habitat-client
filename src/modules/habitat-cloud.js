@@ -28,8 +28,8 @@ const doRequest = (command = 'get-login-identity', url, args = {}) => {
     case 'checkRoles':
       result = checkRoles(url)
       break
-    case 'createLocation':
-      result = createLocation(url, args)
+    case 'createLocale':
+      result = createLocale(url, args)
       break
     case 'createProject':
       result = createProject(url, args)
@@ -92,15 +92,15 @@ const doRequest = (command = 'get-login-identity', url, args = {}) => {
 //
 // These notes will move along with the code, at such time that we modularize
 // the overall cloud command abilities.
-const createLocation = (url, { location, identity }) => {
-  console.log('client requesting cloud create location: ' + identity + ', url: ' + url)
+const createLocale = (url, { locale, identity }) => {
+  console.log('client requesting cloud create locale: ' + identity + ', url: ' + url)
 
   url += '/habitat-request'
   const body = {
-    name: 'create location: ' + location, // *todo* sort out meanings and/or english for command
-    cmd: 'createLocation', // *todo* settle this. Location all around better? Or third word?
+    name: 'create locale: ' + locale, // *todo* sort out meanings and/or english for command
+    cmd: 'createLocale', // *todo* settle this. Locale all around better? Or third word?
     identity: identity,
-    location: location,
+    locale: locale,
     json: true
   }
 
@@ -125,33 +125,33 @@ const createLocation = (url, { location, identity }) => {
     .then(result => {
       if (typeof result !== 'object') {
         return {
-          ok: true, msg: 'Creating location: ' +
+          ok: true, msg: 'Creating locale: ' +
             ', (string) ' + result
         }
       } else {
         return {
-          ok: result.ok, msg: 'Creating location: ' + location +
+          ok: result.ok, msg: 'Creating locale: ' + locale +
             ', ' + result.msg
         }
       }
     })
     .catch(err => {
-      console.log('createLocation:error ' + err)
-      return {ok: false, msg: 'cmd:createLocation:error: ' + err }
+      console.log('createLocale:error ' + err)
+      return {ok: false, msg: 'cmd:createLocale:error: ' + err }
     })
 }
 
-const createProject = (url, { project, location, identity }) => {
-  console.log('client requesting cloud create project: ' + project + ', location: ' + identity +
+const createProject = (url, { project, locale, identity }) => {
+  console.log('client requesting cloud create project: ' + project + ', locale: ' + identity +
     ', identity: ' + identity + ', url: ' + url)
 
   url += '/habitat-request'
   const body = {
-    name: 'create project: ' + project + ', location: ' +
-      location + ', identity: ' + identity, // *todo* sort out meanings and/or english for command
+    name: 'create project: ' + project + ', locale: ' +
+      locale + ', identity: ' + identity, // *todo* sort out meanings and/or english for command
     cmd: 'createProject',
     project: project,
-    location: location,
+    locale: locale,
     identity: identity,
     json: true
   }
@@ -194,17 +194,17 @@ const createProject = (url, { project, location, identity }) => {
     })
 }
 
-const addProjectMember = (url, { project, location, member }) => {
-  console.log('client requesting cloud add project member: ' + project + ', location: ' + location +
+const addProjectMember = (url, { project, locale, member }) => {
+  console.log('client requesting cloud add project member: ' + project + ', locale: ' + locale +
     ', member: ' + member + ', url: ' + url)
 
   url += '/habitat-request'
   const body = {
-    name: 'add project member: ' + project + ', location: ' +
-      location + ', member: ' + member, // *todo* sort out meanings and/or english for command
+    name: 'add project member: ' + project + ', locale: ' +
+      locale + ', member: ' + member, // *todo* sort out meanings and/or english for command
     cmd: 'addProjectMember',
     project: project,
-    location: location,
+    locale: locale,
     member: member,
     json: true
   }
@@ -308,7 +308,7 @@ const publishProject = (url, { status, locale, project }) => {
       + ' for ' + locale + ' - ' + project,
     cmd: 'publishProject',
     publishStatus: status,
-    location: locale,
+    locale: locale,
     project: project,
     json: true
   }
