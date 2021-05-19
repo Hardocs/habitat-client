@@ -1,6 +1,7 @@
 
 // these are habitat-hd abilities, rather than CloudDb itself
 // *todo* open calls one way to do it, but a single call as next, and path strings is better
+// *todo* get a controllable logger in here and elsewhere, so no console unless set
 
 import {getStatusFromDb, safeEnv} from './transport-ifc';
 import {getNodeCookies, loginViaModal, servicesLog} from './habitat-localservices';

@@ -6,7 +6,7 @@ import {
   loadHardocsObject,
   storeHardocsObject,
   replicateDatabase,
-  clearDatabase,
+  clearDatabase
 } from './modules/habitat-database'
 
 import {
@@ -33,7 +33,7 @@ const habitatDb = {
   storeHardocsObject,
   loadHardocsObject,
   replicateDatabase,
-  clearDatabase,
+  clearDatabase
 }
 
 const habitatLocal = {
