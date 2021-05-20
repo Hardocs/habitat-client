@@ -35,7 +35,13 @@ const doRequest = (command = 'get-login-identity', url, args = {}) => {
     case 'createProject':
       result = createProject(url, args)
       break
-    case 'addProjectMember':
+    case 'loadProject':
+      result = loadProject(url, args)
+      break
+    case 'updateProject':
+      result = updateProject(url, args)
+      break
+    case 'addProjectMember': // *todo* sounds this goes out - check
       result = addProjectMember(url, args)
       break
     case 'dbExists':
@@ -192,6 +198,113 @@ const createProject = (url, { project, locale, identity }) => {
     .catch(err => {
       console.log('createProject:error ' + err)
       return {ok: false, msg: 'cmd:createProject:error: ' + err, project: project}
+    })
+}
+
+const loadProject = (url, { project, locale, identity }) => {
+  console.log('client requesting cloud load project: ' + project + ', locale: ' + identity +
+    ', identity: ' + identity + ', url: ' + url)
+
+  url += '/habitat-request'
+  const body = {
+    name: 'load project: ' + project + ', locale: ' +
+      locale + ', identity: ' + identity, // *todo* sort out meanings and/or english for command
+    cmd: 'loadProject',
+    project: project,
+    locale: locale,
+    identity: identity,
+    json: true
+  }
+
+  console.log('loadProject:body: ' + JSON.stringify(body))
+  // *todo* preliminaries only so far
+  return fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
+    headers: new Headers({
+      'Content-Type': 'application/json',
+    }),
+  })
+    .then(result => {
+      const type = result.headers.get('Content-Type')
+      console.log('result content type: ' + type)
+      if (type.includes('text/plain')) {
+        return result.text()
+      } else {
+        return result.json()
+      }
+    })
+    .then(result => {
+      if (typeof result !== 'object') {
+        return {
+          ok: true,
+          msg: 'Loading project: ' + ', (string) ' + result
+        }
+      } else {
+        return {
+          ok: result.ok,
+          msg: 'Loading project: ' + project + ', ' + result.msg
+        }
+      }
+    })
+    .catch(err => {
+      console.log('createProject:error ' + err)
+      return {ok: false, msg: 'cmd:loadProject:error: ' + err, project: project}
+    })
+}
+
+const updateProject = (url, { project, locale, identity, data }) => {
+  console.log('client requesting cloud update project: ' + project + ', locale: ' + identity +
+    ', identity: ' + identity + ', url: ' + url)
+
+  url += '/habitat-request'
+  const body = {
+    name: 'create project: ' + project + ', locale: ' +
+      locale + ', identity: ' + identity, // *todo* sort out meanings and/or english for command
+    cmd: 'updateProject',
+    project: project,
+    locale: locale,
+    identity: identity,
+    data: data,
+    json: true
+  }
+
+  console.log('updateProject:body: ' + JSON.stringify(body))
+  // *todo* preliminaries only so far
+  return fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
+    headers: new Headers({
+      'Content-Type': 'application/json',
+    }),
+  })
+    .then(result => {
+      const type = result.headers.get('Content-Type')
+      console.log('result content type: ' + type)
+      if (type.includes('text/plain')) {
+        return result.text()
+      } else {
+        return result.json()
+      }
+    })
+    .then(result => {
+      if (typeof result !== 'object') {
+        return {
+          ok: true,
+          msg: 'Updating project: ' + ', (string) ' + result
+        }
+      } else {
+        return {
+          ok: result.ok,
+          msg: 'Updating project: ' + project + ', ' + result.msg
+        }
+      }
+    })
+    .catch(err => {
+      console.log('updateProject:error ' + err)
+      return {ok: false, msg: 'cmd:updateProject:error: ' + err, project: project}
     })
 }
 
