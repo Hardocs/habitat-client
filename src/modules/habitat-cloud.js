@@ -237,14 +237,16 @@ const loadProject = (url, { project, locale, identity }) => {
     })
     .then(result => {
       if (typeof result !== 'object') {
+        console.log('returning from string result')
         return {
           ok: true,
-          msg: 'Loading project: ' + ', (string) ' + result
+          msg: result
         }
       } else {
+        console.log('returning from json object result')
         return {
           ok: result.ok,
-          msg: 'Loading project: ' + project + ', ' + result.msg
+          msg: result.msg
         }
       }
     })
