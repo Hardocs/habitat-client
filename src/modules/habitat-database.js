@@ -115,6 +115,31 @@ const upsertProjectLocal = (locale, project, data) => {
   })
 }
 
+const clearSaveHabitatObject = (db, habitatObject) => {
+  return new Promise((resolve, reject) => {
+    const db = createOrOpenDatabase(locale)
+    getStatusFromDb(db)
+      .then(result => {
+        console.log('storeHardocsObject:status: ' + JSON.stringify(result))
+        // console.log ('storeHardocsObject:data: ' + JSON.stringify(data))
+
+        return putJsonToDb(locale, result)
+      })
+      .then(result => {
+        // console.log ('putJsonToDb: ' + JSON.stringify(result))
+        resolve(result)
+      })
+      .catch(err => {
+        console.log('upsert:err: ' + err)
+        reject(err)
+      })
+  })
+}
+
+const updateHardocsObject = (/*db, hardocsObject*/) => {
+  return 'not implemented yet'
+}
+
 const getStatusOfDb =  (dbName = 'hardocs-projects') => {
   return new Promise ((resolve, reject) => {
     const db = createOrOpenDatabase(dbName)
@@ -220,6 +245,8 @@ export {
   storeHardocsObject,
   clearDatabase,
   listLocaleProjects,
+  clearSaveHabitatObject,
+  updateHardocsObject,
   replicateDatabase,
   keyFromParts
 }

@@ -5,6 +5,8 @@ import {
   listLocaleProjects,
   loadHardocsObject,
   storeHardocsObject,
+  clearSaveHabitatObject,
+  updateHardocsObject,
   replicateDatabase,
   clearDatabase
 } from './modules/habitat-database'
@@ -32,6 +34,8 @@ const habitatDb = {
   listLocaleProjects,
   storeHardocsObject,
   loadHardocsObject,
+  clearSaveHabitatObject,
+  updateHardocsObject,
   replicateDatabase,
   clearDatabase
 }
