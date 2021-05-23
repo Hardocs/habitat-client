@@ -19,8 +19,8 @@
 import {
   createOrOpenDb, getStatusFromDb,
   getJsonFromDb, putJsonToDb,
-  destroyDb,  // *todo* out later
-  alldocsJsonFromDb, replicateDb
+  deleteDocument, destroyDb,  // *todo* out later
+  alldocsJsonFromDb, replicateDb, removeJsonFromDb
 } from './transport-ifc'
 import {
   loginViaModal,
@@ -115,28 +115,68 @@ const upsertProjectLocal = (locale, project, data) => {
   })
 }
 
-const clearSaveHabitatObject = (db, habitatObject) => {
+// this is the local save, after editing,  and before any replications to the cloud
+const saveProjectObject = (habitatObject, clear = false, dbName = 'habitat-projects') => {
   return new Promise((resolve, reject) => {
-    const db = createOrOpenDatabase(locale)
+    const db = createOrOpenDatabase(dbName)
     getStatusFromDb(db)
       .then(result => {
-        console.log('storeHardocsObject:status: ' + JSON.stringify(result))
-        // console.log ('storeHardocsObject:data: ' + JSON.stringify(data))
-
-        return putJsonToDb(locale, result)
+        console.log('saveProjectObject:status: ' + JSON.stringify(result))
+        return putJsonToDb(db, habitatObject)
       })
       .then(result => {
-        // console.log ('putJsonToDb: ' + JSON.stringify(result))
+        // console.log ('saveProjectObject result: ' + JSON.stringify(result))
         resolve(result)
       })
       .catch(err => {
-        console.log('upsert:err: ' + err)
+        console.log('saveProjectObject:error: ' + err)
         reject(err)
       })
   })
 }
 
-const updateHardocsObject = (/*db, hardocsObject*/) => {
+const saveHabitatObject = (habitatObject, clear = false, dbName = 'habitat-projects') => {
+  return new Promise((resolve, reject) => {
+    const db = createOrOpenDatabase(dbName)
+    getStatusFromDb(db)
+      .then(result => {
+        console.log('saveHabitatObject:status: ' + JSON.stringify(result))
+        // console.log ('storeHardocsObject:data: ' + JSON.stringify(data))
+        return
+      })
+      // .then(() => {
+      //   // if (clear) {
+      //   //   try {
+      //   // return deleteDocument (db, habitatObject)
+      //   return removeJsonFromDb (db, habitatObject)
+      //   //   }
+      //   //   catch (err) {
+      //   //     console.log ('delete project error: ' + JSON.stringify(err))
+      //   //     console.log ('delete project error string: ' + err)
+      //   //   }
+      //   // }
+      //   // return // is needed?
+      // })
+      // .catch(err => {
+      //   console.log ('delete error: ' + JSON.stringify(err))
+      // })
+      .then (() => {
+        console.log ('about to store')
+        return putJsonToDb(db, habitatObject, { new_edits: false })
+      })
+      .then(result => {
+        console.log ('saveHabitatObject: ' + JSON.stringify(result))
+        result.ok = true
+        resolve(result)
+      })
+      .catch(err => {
+        console.log('saveHabitatObject:err: ' + err)
+        reject(err)
+      })
+  })
+}
+
+const updateProjectObject = (/*db, hardocsObject*/) => {
   return 'not implemented yet'
 }
 
@@ -203,6 +243,10 @@ const clearDatabase = (dbName = 'hardocs-projects') => {
   })
 }
 
+const deleteProject = (db, project) => {
+  throw new Error ({ ok: false, msg: 'deleteProject not implemented yet'})
+}
+
 const listLocaleProjects =  (locale = '', dbName = 'hardocs-projects') => {
   console.log('listLocaleProjects not yet using locale: ' + locale)
   return new Promise ((resolve, reject) => {
@@ -245,8 +289,9 @@ export {
   storeHardocsObject,
   clearDatabase,
   listLocaleProjects,
-  clearSaveHabitatObject,
-  updateHardocsObject,
+  saveProjectObject,
+  saveHabitatObject,
+  updateProjectObject,
   replicateDatabase,
   keyFromParts
 }

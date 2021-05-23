@@ -39,13 +39,13 @@ const findJsonFromDb = (db, query) => {
   return db.find(query)
 }
 
-const putJsonToDb = (db, data) => {
+const putJsonToDb = (db, data, options = {}) => {
   // *todo* from now on, we'll use our own ids, sensible to data,
   // *todo* but for now, this is left for original demo, out soon
   if (!data._id) {
     data._id = uuidv4()
   }
-  return db.put(data)
+  return db.put(data, options)
 }
 
 const removeJsonFromDb = (db, record) => {
@@ -62,6 +62,10 @@ const replicateDb = (fromDb, toDb, options) => {
           reject(err)
       })
     })
+}
+
+const deleteDocument = (db, doc) => {
+  return db.remove (doc._id, doc._rev)
 }
 
 const compactDb = (db) => {
@@ -103,6 +107,7 @@ export {
   putJsonToDb,
   removeJsonFromDb,
   replicateDb,
+  deleteDocument,
   compactDb,
   destroyDb,
   safeEnv
