@@ -27,8 +27,41 @@ import {
   servicesLog
 } from './habitat-localservices'
 
+// *todo* rationalize all these calls after discovery; ones we don't need, ones non-completed
+
+const localDbName = 'habitat-projects' // will always be, matching Habitat HD
+
+const readLocalProjectObject =  (locale = 'firstLocale',
+                            project = 'firstProject',
+                            identity) => {
+  return new Promise ((resolve, reject) => {
+
+    const projectId = keyFromParts(locale, project, identity)
+    console.log ('projectId: ' + projectId)
+
+    const db = createOrOpenDatabase(localDbName)
+    getStatusFromDb(db)
+      .then (result => {
+        console.log ('readLocalProjectObject:status: ' + JSON.stringify(result))
+        return getJsonFromDb(db, projectId)
+      })
+      .then (result => {
+        console.log('readLocalProjectObject:result: ' + JSON.stringify(result))
+        // be consistent in our messaging, result always a string
+        const dbContent = { ok: true, msg: JSON.stringify(result)}
+        resolve (dbContent)
+      })
+      .catch (err => {
+        console.log ('readLocalProjectObject:error: ' + err)
+        reject (err)
+      })
+  })
+}
+
+
+// *todo* skeleton not at all right or necessarily needed - see design progress
 const loadHardocsObject =  (locale = 'habitat-projects',
-                                 project = 'firstProject') => {
+                            project = 'firstProject') => {
   return new Promise ((resolve, reject) => {
     const db = createOrOpenDatabase(locale)
     getStatusFromDb(db)
@@ -48,6 +81,7 @@ const loadHardocsObject =  (locale = 'habitat-projects',
   })
 }
 
+// *todo* skeleton not at all right or necessarily needed - see design progress
 const storeHardocsObject = (locale, project, data = {}) => {
 
   return new Promise ((resolve, reject) => {
@@ -72,6 +106,7 @@ const storeHardocsObject = (locale, project, data = {}) => {
   })
 }
 
+// *todo* this goes, is not at all right, now that we have real one - see design progress
 // upsert is a service needed internally, not to be exposed, as it handles a
 // particular case of store to database. Also to change implementation
 // to match emerging cloud.
@@ -276,6 +311,7 @@ const listLocaleProjects =  (locale = '', dbName = 'hardocs-projects') => {
   })
 }
 
+// *todo this goes out, or if needed, renames as replicateFromToDatabase
 const replicateDatabase = (from, to, options = {}) => {
   const fromDb = createOrOpenDatabase(from)
   const toDb = createOrOpenDatabase(to)
@@ -285,8 +321,8 @@ const replicateDatabase = (from, to, options = {}) => {
   return replicateDb(fromDb, toDb, options)
 }
 
-const keyFromParts = (locale, project) => {
-  return locale + ':' + project
+const keyFromParts = (locale, project, identity) => {
+  return locale + ':' + project + ':' + identity
 }
 
 export {
@@ -296,6 +332,7 @@ export {
   storeHardocsObject,
   clearDatabase,
   listLocaleProjects,
+  readLocalProjectObject,
   saveProjectObject,
   saveHabitatObject,
   updateProjectObject,

@@ -1,6 +1,8 @@
 // expose the habitat database modules for npm
 
 import {
+  readLocalProjectObject,
+  createOrOpenDatabase,
   getStatusOfDb,
   listLocaleProjects,
   loadHardocsObject,
@@ -31,6 +33,8 @@ import {
 } from './modules/habitat-cloud'
 
 const habitatDb = {
+  readLocalProjectObject,
+  createOrOpenDatabase,
   getStatusOfDb,
   listLocaleProjects,
   storeHardocsObject,
