@@ -122,34 +122,17 @@ const saveProjectObject = (projectObject, clear = false, dbName = 'habitat-proje
     getStatusFromDb(db)
       .then(result => {
         console.log('saveProjectObject:status: ' + JSON.stringify(result))
-        // return putJsonToDb(db, habitatObject)
-        // let finished = false
-        // let maxTries = 5
-        // let needsAlignment = false;
-        // let putResult = { ok: false, msg: 'unsaved yet'}
-        // while (maxTries-- > 0 && !finished) {
-        //   putResult = putJsonToDb(db, habitatObject)
-        //     .then (result => {
-        //       console.log('result: ' + JSON.stringify(result))
-        //       if (!result.ok && result.contains('409')) {
-        //         needsAlignment = true
-        //       }
-        //       return result
-        //     })
-        //     .catch (err => {
-        //       console.log ('put failed: ' + err)
-        //       needsAlignment = true
-        //     })
-        // }
-        // console.log ('needsAlignment: ' + needsAlignment + ',  maxTries: ' + maxTries)
-        // putResult = { ok: false, msg: ', needsAlignment: ' + needsAlignment }
-        // return putResult
 
-        // let's try this again using the utility
-        return upsertJsonToDb (db, (doc) => { return doc }, projectObject)
+        // let's use our repaired version of the utility
+        const updateFunction = (doc) => {
+          doc.hdFrame = projectObject.hdFrame
+          doc.projectObject = projectObject.projectObject // *todo* change this name! hdObject?
+          return doc
+        }
+        return upsertJsonToDb (db, projectObject._id, updateFunction)
       })
       .then(result => {
-        // console.log ('saveProjectObject result: ' + JSON.stringify(result))
+        console.log ('saveProjectObject result: ' + JSON.stringify(result))
         resolve(result)
       })
       .catch(err => {
@@ -201,7 +184,7 @@ const saveHabitatObject = (habitatObject, clear = false, dbName = 'habitat-proje
 }
 
 const updateProjectObject = (/*db, hardocsObject*/) => {
-  return 'not implemented yet'
+  return 'not implemented yet'  // *todo* and not going to be, looks like (replicate does)
 }
 
 const getStatusOfDb =  (dbName = 'hardocs-projects') => {
@@ -297,7 +280,7 @@ const replicateDatabase = (from, to, options = {}) => {
   const fromDb = createOrOpenDatabase(from)
   const toDb = createOrOpenDatabase(to)
 
-  // *todo* a little status checking Promise surround here...pronto
+  // *todo* a little status checking Promise surround here...pronto??
 
   return replicateDb(fromDb, toDb, options)
 }

@@ -96,7 +96,7 @@ const destroyDb = (db) => {
 }
 
 // eslint-disable-next-line
-const upsertJsonToDb = (db, query, data) => {
+const upsertJsonToDb = (db, id, diffFunc) => {
 
   // return new Promise((resolve, reject) => {
   //   reject ( 'Upsert not available, will be provided later...instead, use Put')
@@ -107,7 +107,7 @@ const upsertJsonToDb = (db, query, data) => {
   // when code is provided, we'll also properly remove the lint disable preceding
 
   // so let's make it work
-  return db.upsert(query, data)
+  return db.upsert(id, diffFunc)
 }
 
 const safeEnv = (value, preset) => { // don't use words like default...
