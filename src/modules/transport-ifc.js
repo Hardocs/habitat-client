@@ -1,12 +1,31 @@
 // here all database interactions are abstracted, thus decoupled
 
 import PouchDb from 'pouchdb';
-import PouchDbFind from 'pouchdb-find';
-import PouchDbUpsert from 'pouchdb-upsert';
-import { v4 as uuidv4 } from 'uuid'
+// // import PouchDbFind from 'pouchdb-find';
+// import PouchDbUpsert from 'pouchdb-upsert';
+// import { v4 as uuidv4 } from 'uuid'
+//
+// // PouchDb.plugin(PouchDbFind)
+// PouchDb.plugin(PouchDbUpsert)
+// // const PouchDb = require('pouchdb')
+// // PouchDb.plugin(require('pouchdb-upsert'));
 
-PouchDb.plugin(PouchDbFind)
-PouchDb.plugin(PouchDbUpsert)
+// this is called 'dirtyfixing'. It certainly is.
+// from: https://github.com/pouchdb/pouchdb/issues/6645#issuecomment-344706842
+// we do it minus the types, as we're not TypeScript here
+
+// // import * as rawPouch from 'pouchdb';
+// // import * as rawFind from 'pouchdb-find';
+// import * as rawUpsert from 'pouchdb-upsert';
+//
+// // const PouchDb = rawPouch.default;
+// // const find = rawFind.default;
+// const upsert = rawUpsert;
+
+import upsert from './pouchdb-our-upsert'
+
+// PouchDb.plugin(find);
+PouchDb.plugin(upsert);
 
 const createOrOpenDb = (dbName, opts = {}) => {
   // opts = Object.assign(opts, {
@@ -79,13 +98,16 @@ const destroyDb = (db) => {
 // eslint-disable-next-line
 const upsertJsonToDb = (db, query, data) => {
 
-  return new Promise((resolve, reject) => {
-    reject ( 'Upsert not available, will be provided later...instead, use Put')
-  })
+  // return new Promise((resolve, reject) => {
+  //   reject ( 'Upsert not available, will be provided later...instead, use Put')
+  // })
 
   // the original code here wasn't a good idea - web people publish such...
   // concept was wrong, but especially, precluded wider area concepts we need
   // when code is provided, we'll also properly remove the lint disable preceding
+
+  // so let's make it work
+  return db.upsert(query, data)
 }
 
 const safeEnv = (value, preset) => { // don't use words like default...

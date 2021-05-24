@@ -18,7 +18,7 @@
 
 import {
   createOrOpenDb, getStatusFromDb,
-  getJsonFromDb, putJsonToDb,
+  getJsonFromDb, putJsonToDb, upsertJsonToDb,
   deleteDocument, destroyDb,  // *todo* out later
   alldocsJsonFromDb, replicateDb, removeJsonFromDb
 } from './transport-ifc'
@@ -116,13 +116,37 @@ const upsertProjectLocal = (locale, project, data) => {
 }
 
 // this is the local save, after editing,  and before any replications to the cloud
-const saveProjectObject = (habitatObject, clear = false, dbName = 'habitat-projects') => {
+const saveProjectObject = (projectObject, clear = false, dbName = 'habitat-projects') => {
   return new Promise((resolve, reject) => {
     const db = createOrOpenDatabase(dbName)
     getStatusFromDb(db)
       .then(result => {
         console.log('saveProjectObject:status: ' + JSON.stringify(result))
-        return putJsonToDb(db, habitatObject)
+        // return putJsonToDb(db, habitatObject)
+        // let finished = false
+        // let maxTries = 5
+        // let needsAlignment = false;
+        // let putResult = { ok: false, msg: 'unsaved yet'}
+        // while (maxTries-- > 0 && !finished) {
+        //   putResult = putJsonToDb(db, habitatObject)
+        //     .then (result => {
+        //       console.log('result: ' + JSON.stringify(result))
+        //       if (!result.ok && result.contains('409')) {
+        //         needsAlignment = true
+        //       }
+        //       return result
+        //     })
+        //     .catch (err => {
+        //       console.log ('put failed: ' + err)
+        //       needsAlignment = true
+        //     })
+        // }
+        // console.log ('needsAlignment: ' + needsAlignment + ',  maxTries: ' + maxTries)
+        // putResult = { ok: false, msg: ', needsAlignment: ' + needsAlignment }
+        // return putResult
+
+        // let's try this again using the utility
+        return upsertJsonToDb (db, (doc) => { return doc }, projectObject)
       })
       .then(result => {
         // console.log ('saveProjectObject result: ' + JSON.stringify(result))
