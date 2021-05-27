@@ -3,6 +3,8 @@
 // *todo* open calls one way to do it, but a single call as next, and path strings is better
 // *todo* get a controllable logger in here and elsewhere, so no console unless set
 
+// *todo* !! document how our doRequest avoids visibility for almost all db ops
+
 import {getStatusFromDb, safeEnv} from './transport-ifc';
 import {getNodeCookies, loginViaModal, servicesLog} from './habitat-localservices';
 import {createOrOpenDatabase} from './habitat-database';
@@ -16,12 +18,9 @@ const publicCloud = safeEnv(process.env.PUBLIC_CLOUD,
 const doRequest = (command = 'get-login-identity', url, args = {}) => {
   console.log('habitat-client:doRequest: <' + command + '>')
 
-  // something like the structure habitat-hd will use
   let result = {}
 
-  // *todo* change each request into a promise-gated check on command, bigtime.
-  // *todo* in each check, failing gets teh message to return, thus bettering if-else
-
+  // this is kept for flexibility, though many commands simplify just to use { arguments }
   switch (command) {
     case 'getLoginIdentity':
       result = getLoginIdentity(url)
@@ -37,6 +36,9 @@ const doRequest = (command = 'get-login-identity', url, args = {}) => {
       break
     case 'loadProject':
       result = loadProject(url, args)
+      break
+    case 'resolveConflicts':
+      result = resolveConflicts(url, args)
       break
     case 'updateProject':
       result = updateProject(url, args)
@@ -201,9 +203,9 @@ const createProject = (url, { project, locale, identity }) => {
     })
 }
 
-const loadProject = (url, { project, locale, identity }) => {
+const loadProject = (url, { project, locale, identity, options = {} }) => {
   console.log('client requesting cloud load project: ' + project + ', locale: ' + identity +
-    ', identity: ' + identity + ', url: ' + url)
+    ', identity: ' + identity + ', url: ' + url, ', options: ' + JSON.stringify(options))
 
   url += '/habitat-request'
   const body = {
@@ -213,6 +215,7 @@ const loadProject = (url, { project, locale, identity }) => {
     project: project,
     locale: locale,
     identity: identity,
+    options: JSON.stringify(options),
     json: true
   }
 
@@ -307,6 +310,60 @@ const updateProject = (url, { project, locale, identity, data }) => {
     .catch(err => {
       console.log('updateProject:error ' + err)
       return {ok: false, msg: 'cmd:updateProject:error: ' + err, project: project}
+    })
+}
+
+const resolveConflicts = (url, { project, locale, identity, options = { resolve: 'mine'}}) => {
+  console.log('client requesting cloud resolve project: ' + project + ', locale: ' + identity +
+    ', identity: ' + identity + ', url: ' + url)
+
+  url += '/habitat-request'
+  const body = {
+    name: 'create project: ' + project + ', locale: ' +
+      locale + ', identity: ' + identity, // *todo* sort out meanings and/or english for command
+    cmd: 'resolveConflicts',
+    project: project,
+    locale: locale,
+    identity: identity,
+    options: JSON.stringify(options),
+    json: true
+  }
+
+  console.log('resolveConflicts:body: ' + JSON.stringify(body))
+  // *todo* preliminaries only so far
+  return fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
+    headers: new Headers({
+      'Content-Type': 'application/json',
+    }),
+  })
+    .then(result => {
+      const type = result.headers.get('Content-Type')
+      console.log('result content type: ' + type)
+      if (type.includes('text/plain')) {
+        return result.text()
+      } else {
+        return result.json()
+      }
+    })
+    .then(result => {
+      if (typeof result !== 'object') {
+        return {
+          ok: true,
+          msg: 'Updating project: ' + ', (string) ' + result
+        }
+      } else {
+        return {
+          ok: result.ok,
+          msg: 'Updating project: ' + project + ', ' + result.msg
+        }
+      }
+    })
+    .catch(err => {
+      console.log('resolve conflicts:error ' + err)
+      return {ok: false, msg: 'cmd:resolveConflicts:error: ' + err, project: project}
     })
 }
 

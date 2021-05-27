@@ -106,49 +106,6 @@ const storeHardocsObject = (locale, project, data = {}) => {
   })
 }
 
-// *todo* this goes, is not at all right, now that we have real one - see design progress
-// upsert is a service needed internally, not to be exposed, as it handles a
-// particular case of store to database. Also to change implementation
-// to match emerging cloud.
-const upsertProjectLocal = (locale, project, data) => {
-  // *todo* seems to work as expected, but is a little different from lib - check
-  return new Promise ((resolve, reject) => {
-    let projectData = {
-      _id: project,
-      locale: locale,
-      data: data
-    }
-    // first, see if we have the project already
-    getJsonFromDb(locale, project)
-      .then(result => {
-        // console.log('upsertProjectLocal:getJsonFromDb: ' + JSON.stringify(result))
-        if (result) {
-          // console.log('assigning: data: ' + JSON.stringify(data))
-          const assigned = Object.assign(result, { data: data })
-          console.log('previous data; assigned ok') // data: ' + JSON.stringify(data))
-          return assigned
-        } else {
-          throw new Error ('upsertProjectLocal:getJsonFromDb:error:no prior resul!')
-        }
-      })
-      .catch (err => {
-        console.log('upsertProjectLocal:no earlier data, initial put. ')
-        return projectData
-        })
-      .then(result => {
-        // console.log('upsertProjectLocal:tostore: ' + JSON.stringify(result))
-        return putJsonToDb(locale, result)
-      })
-      .then (result => {
-        // console.log ('putJsonToDb: ' + JSON.stringify(result))
-        resolve(result)
-      })
-      .catch(err => {
-        console.log('upsert:err: ' + err)
-        reject(err)
-      })
-  })
-}
 
 // this is the local save, after editing,  and before any replications to the cloud
 const saveProjectObject = (projectObject, clear = false, dbName = 'habitat-projects') => {
@@ -160,8 +117,11 @@ const saveProjectObject = (projectObject, clear = false, dbName = 'habitat-proje
 
         // let's use our repaired version of the utility
         const updateFunction = (doc) => {
+          // note that we use moment of saving work, not of upload
+          // now() can drift slightly, but only possible, and good enough for us
+          doc.timestamp = Date.now(),
           doc.hdFrame = projectObject.hdFrame
-          doc.projectObject = projectObject.projectObject // *todo* change this name! hdObject?
+          doc.hdProject = projectObject.projectObject // *todo* change this name! hdObject?
           return doc
         }
         return upsertJsonToDb (db, projectObject._id, updateFunction)
@@ -186,22 +146,6 @@ const saveHabitatObject = (habitatObject, clear = false, dbName = 'habitat-proje
         // console.log ('storeHardocsObject:data: ' + JSON.stringify(data))
         return
       })
-      // .then(() => {
-      //   // if (clear) {
-      //   //   try {
-      //   // return deleteDocument (db, habitatObject)
-      //   return removeJsonFromDb (db, habitatObject)
-      //   //   }
-      //   //   catch (err) {
-      //   //     console.log ('delete project error: ' + JSON.stringify(err))
-      //   //     console.log ('delete project error string: ' + err)
-      //   //   }
-      //   // }
-      //   // return // is needed?
-      // })
-      // .catch(err => {
-      //   console.log ('delete error: ' + JSON.stringify(err))
-      // })
       .then (() => {
         console.log ('about to store')
         return putJsonToDb(db, habitatObject, { new_edits: false })
