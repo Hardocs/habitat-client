@@ -231,10 +231,18 @@ const clearDatabase = (dbName = 'hardocs-projects') => {
 
 const deleteProject = (db, project) => {
   throw new Error ({ ok: false, msg: 'deleteProject not implemented yet'})
+
+  // and now we know a good reason this comes last.
+  // - must delete all revisions remaining - use bulkDelete
+  // - for sanity, must do this both locally and in cloud, lest miss any
+  // - thus, this is a cloud-only operation. Some safety in that as well?
 }
 
 const listLocaleProjects =  (locale = '', dbName = 'hardocs-projects') => {
   console.log('listLocaleProjects not yet using locale: ' + locale)
+  // *todo* this is far from ready yet as well - as it depends on locale
+  // can we depend on cdb to do trawl without a view, on hardocs-projects?
+
   return new Promise ((resolve, reject) => {
     const db = createOrOpenDatabase(dbName)
     getStatusFromDb(db)

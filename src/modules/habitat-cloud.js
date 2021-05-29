@@ -352,12 +352,12 @@ const resolveConflicts = (url, { project, locale, identity, options = { resolve:
       if (typeof result !== 'object') {
         return {
           ok: true,
-          msg: 'Updating project: ' + ', (string) ' + result
+          msg: 'Resolve conflicts: ' + ', (string) ' + result
         }
       } else {
         return {
           ok: result.ok,
-          msg: 'Updating project: ' + project + ', ' + result.msg
+          msg: 'Resolve conflicts:project: ' + project + ', ' + result.msg
         }
       }
     })
