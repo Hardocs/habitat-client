@@ -313,7 +313,7 @@ const updateProject = (url, { project, locale, identity, data }) => {
     })
 }
 
-const resolveConflicts = (url, { project, locale, identity, options = { resolve: 'mine'}}) => {
+const resolveConflicts = (url, {project, locale, identity, options = {resolve: 'mine'}}) => {
   console.log('client requesting cloud resolve project: ' + project + ', locale: ' + identity +
     ', identity: ' + identity + ', url: ' + url)
 
