@@ -60,22 +60,22 @@ const readLocalProjectObject =  (locale = 'firstLocale',
 
 
 // *todo* skeleton not at all right or necessarily needed - see design progress
-const loadHardocsObject =  (locale = 'habitat-projects',
+const loadHabitatObject =  (locale = 'habitat-projects',
                             project = 'firstProject') => {
   return new Promise ((resolve, reject) => {
     const db = createOrOpenDatabase(locale)
     getStatusFromDb(db)
       .then (result => {
-        console.log ('loadHardocsObject:status: ' + JSON.stringify(result))
-        console.log ('loadHardocsObject:key: ' + keyFromParts(locale, project))
+        console.log ('loadHabitatObject:status: ' + JSON.stringify(result))
+        console.log ('loadHabitatObject:key: ' + keyFromParts(locale, project))
         return getJsonFromDb(db, project)
       })
       .then (result => {
-        console.log('loadHardocsObject:result: ' + JSON.stringify(result))
+        console.log('loadHabitatObject:result: ' + JSON.stringify(result))
         resolve (result)
       })
       .catch (err => {
-        console.log ('loadHardocsObject:error: ' + err)
+        console.log ('loadHabitatObject:error: ' + err)
         reject (err)
       })
   })
@@ -121,7 +121,7 @@ const saveProjectObject = (projectObject, clear = false, dbName = 'habitat-proje
           // now() can drift slightly, but only possible, and good enough for us
           doc.timestamp = Date.now(),
           doc.hdFrame = projectObject.hdFrame
-          doc.hdProject = projectObject.projectObject // *todo* change this name! hdObject?
+          doc.hdObject = projectObject.hdObject
           return doc
         }
         return upsertJsonToDb (db, projectObject._id, updateFunction)
@@ -280,7 +280,7 @@ const keyFromParts = (locale, project, identity) => {
 export {
   createOrOpenDatabase,
   getStatusOfDb,
-  loadHardocsObject,
+  loadHabitatObject,
   storeHardocsObject,
   clearDatabase,
   listLocaleProjects,
