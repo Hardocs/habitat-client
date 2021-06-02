@@ -16,7 +16,8 @@ const publicCloud = safeEnv(process.env.PUBLIC_CLOUD,
   'https://hd.narrationsd.com/hard-api/habitat-public')
 
 const doRequest = (command = 'get-login-identity', url, args = {}) => {
-  console.log('habitat-client:doRequest: <' + command + '>')
+  console.log('habitat-cloud:doRequest: <' + command +
+    ', args: ' + JSON.stringify(args) + '>')
 
   let result = {}
 
@@ -40,8 +41,8 @@ const doRequest = (command = 'get-login-identity', url, args = {}) => {
     case 'resolveConflicts':
       result = resolveConflicts(url, args)
       break
-    case 'updateProject':
-      result = updateProject(url, args)
+    case 'updateHabitatProject':
+      result = updateHabitatProject(url, args)
       break
     case 'addProjectMember': // *todo* sounds this goes out - check
       result = addProjectMember(url, args)
@@ -259,19 +260,17 @@ const loadProject = (url, { project, locale, identity, options = {} }) => {
     })
 }
 
-const updateProject = (url, { project, locale, identity, data }) => {
-  console.log('client requesting cloud update project: ' + project + ', locale: ' + identity +
-    ', identity: ' + identity + ', url: ' + url)
+const updateHabitatProject = (url, { locale, project, projectData, options }) => {
+  console.log('client requesting cloud update project: ' + projectData._id + ', url: ' + url)
 
   url += '/habitat-request'
   const body = {
-    name: 'create project: ' + project + ', locale: ' +
-      locale + ', identity: ' + identity, // *todo* sort out meanings and/or english for command
-    cmd: 'updateProject',
-    project: project,
+    name: 'updateHabitatProject: ' + projectData._id,
+    cmd: 'updateHabitatProject',
     locale: locale,
-    identity: identity,
-    data: data,
+    project: project,
+    projectData: projectData,
+    options: options,
     json: true
   }
 
@@ -288,6 +287,8 @@ const updateProject = (url, { project, locale, identity, data }) => {
     .then(result => {
       const type = result.headers.get('Content-Type')
       console.log('result content type: ' + type)
+
+      // *todo* !!! surely a method for boilerplate that follows, asap
       if (type.includes('text/plain')) {
         return result.text()
       } else {
@@ -303,13 +304,14 @@ const updateProject = (url, { project, locale, identity, data }) => {
       } else {
         return {
           ok: result.ok,
-          msg: 'Updating project: ' + project + ', ' + result.msg
+          msg: 'Updating project: ' + projectData._id + ', ' + result.msg
         }
       }
     })
     .catch(err => {
-      console.log('updateProject:error ' + err)
-      return {ok: false, msg: 'cmd:updateProject:error: ' + err, project: project}
+      const msg = 'updateHabitatProject:error: ' + err.stack
+      console.log(msg)
+      return {ok: false, msg: msg }
     })
 }
 
