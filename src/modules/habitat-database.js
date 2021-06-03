@@ -108,6 +108,7 @@ const storeHardocsObject = (locale, project, data = {}) => {
 
 
 // this is the local save, after editing,  and before any replications to the cloud
+// we should merge ts and save HabitatObject, with an argument as to whether totimestamp or not
 const saveProjectObject = (projectObject, clear = false, dbName = 'habitat-projects') => {
   return new Promise((resolve, reject) => {
     const db = createOrOpenDatabase(dbName)
@@ -119,6 +120,16 @@ const saveProjectObject = (projectObject, clear = false, dbName = 'habitat-proje
         const updateFunction = (doc) => {
           // note that we use moment of saving work, not of upload
           // now() can drift slightly, but only possible, and good enough for us
+
+
+          // some notes to merge, or on the other side
+          // crucial: here is where the timestamp needs to be updated,
+          // as it is the workstation's save time that should win.
+          // n.b. we are not interested in when it may update, even if that
+          // at present could be at the same time. In future stages, definitely not.
+          // habitatObject.timestamp = Date.now()
+          // Do not touch; as our own conflict resolution stages begin here
+
           doc.timestamp = Date.now(),
           doc.hdFrame = projectObject.hdFrame
           doc.hdObject = projectObject.hdObject
@@ -137,16 +148,9 @@ const saveProjectObject = (projectObject, clear = false, dbName = 'habitat-proje
   })
 }
 
+// this is used at present to save from loading cloud version
 const saveHabitatObject = (habitatObject, clear = false, dbName = 'habitat-projects') => {
   return new Promise((resolve, reject) => {
-
-    // crucial: here is where the timestamp needs to be updated,
-    // as it is the workstation's save time that should win.
-    // n.b. we are not interested in when it may update, even if that
-    // at present could be at the same time. In future stages, definitely not.
-    habitatObject.timestamp = Date.now()
-    // Do not touch; as our own conflict resolution stages begin here
-
     const db = createOrOpenDatabase(dbName)
     getStatusFromDb(db)
       .then(result => {
