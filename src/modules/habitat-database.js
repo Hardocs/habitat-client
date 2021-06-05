@@ -108,7 +108,7 @@ const storeHardocsObject = (locale, project, data = {}) => {
 
 
 // this is the local save, after editing,  and before any replications to the cloud
-// we should merge ts and save HabitatObject, with an argument as to whether totimestamp or not
+// we should merge ts and save HabitatObject, with an argument whether to timestamp or not
 const saveProjectObject = (projectObject, clear = false, dbName = 'habitat-projects') => {
   return new Promise((resolve, reject) => {
     const db = createOrOpenDatabase(dbName)

@@ -41,17 +41,14 @@ const doRequest = (command = 'get-login-identity', url, args = {}) => {
     case 'deleteProject':
       result = deleteProject(url, args)
       break
-    case 'loadProject':
-      result = loadProject(url, args)
+    case 'downloadProject':
+      result = downloadProject(url, args)
       break
     case 'resolveConflicts':
       result = resolveConflicts(url, args)
       break
-    case 'updateHabitatProject':
-      result = updateHabitatProject(url, args)
-      break
-    case 'addProjectMember': // *todo* sounds this goes out - check
-      result = addProjectMember(url, args)
+    case 'uploadProject':
+      result = uploadProject(url, args)
       break
     case 'dbExists':
       // *todo* isn't this decode a leftover; do without?
@@ -210,7 +207,7 @@ const createProject = (url, { project, locale, identity }) => {
     })
 }
 
-const loadProject = (url, { project, locale, identity, options = {} }) => {
+const downloadProject = (url, { project, locale, identity, options = {} }) => {
   console.log('client requesting cloud load project: ' + project + ', locale: ' + identity +
     ', identity: ' + identity + ', url: ' + url, ', options: ' + JSON.stringify(options))
 
@@ -218,7 +215,7 @@ const loadProject = (url, { project, locale, identity, options = {} }) => {
   const body = {
     name: 'load project: ' + project + ', locale: ' +
       locale + ', identity: ' + identity, // *todo* sort out meanings and/or english for command
-    cmd: 'loadProject',
+    cmd: 'downloadProject',
     project: project,
     locale: locale,
     identity: identity,
@@ -226,7 +223,7 @@ const loadProject = (url, { project, locale, identity, options = {} }) => {
     json: true
   }
 
-  console.log('loadProject:body: ' + JSON.stringify(body))
+  console.log('downloadProject:body: ' + JSON.stringify(body))
   // *todo* preliminaries only so far
   return fetch(url, {
     method: 'POST',
@@ -262,17 +259,17 @@ const loadProject = (url, { project, locale, identity, options = {} }) => {
     })
     .catch(err => {
       console.log('createProject:error ' + err)
-      return {ok: false, msg: 'cmd:loadProject:error: ' + err, project: project}
+      return {ok: false, msg: 'cmd:downloadProject:error: ' + err, project: project}
     })
 }
 
-const updateHabitatProject = (url, { locale, project, projectData, options }) => {
+const uploadProject = (url, { locale, project, projectData, options }) => {
   console.log('client requesting cloud update project: ' + projectData._id + ', url: ' + url)
 
   url += '/habitat-request'
   const body = {
-    name: 'updateHabitatProject: ' + projectData._id,
-    cmd: 'updateHabitatProject',
+    name: 'uploadProject: ' + projectData._id,
+    cmd: 'uploadProject',
     locale: locale,
     project: project,
     projectData: projectData,
@@ -280,7 +277,7 @@ const updateHabitatProject = (url, { locale, project, projectData, options }) =>
     json: true
   }
 
-  console.log('updateProject:body: ' + JSON.stringify(body))
+  console.log('uploadProject:body: ' + JSON.stringify(body))
   // *todo* preliminaries only so far
   return fetch(url, {
     method: 'POST',
@@ -315,7 +312,7 @@ const updateHabitatProject = (url, { locale, project, projectData, options }) =>
       }
     })
     .catch(err => {
-      const msg = 'updateHabitatProject:error: ' + err.stack
+      const msg = 'uploadProject:error: ' + err.stack
       console.log(msg)
       return {ok: false, msg: msg }
     })
@@ -372,59 +369,6 @@ const resolveConflicts = (url, {project, locale, identity, options = {resolve: '
     .catch(err => {
       console.log('resolve conflicts:error ' + err)
       return {ok: false, msg: 'cmd:resolveConflicts:error: ' + err, project: project}
-    })
-}
-
-const addProjectMember = (url, { project, locale, member }) => {
-  console.log('client requesting cloud add project member: ' + project + ', locale: ' + locale +
-    ', member: ' + member + ', url: ' + url)
-
-  url += '/habitat-request'
-  const body = {
-    name: 'add project member: ' + project + ', locale: ' +
-      locale + ', member: ' + member, // *todo* sort out meanings and/or english for command
-    cmd: 'addProjectMember',
-    project: project,
-    locale: locale,
-    member: member,
-    json: true
-  }
-
-  console.log('addProjectMember:body: ' + JSON.stringify(body))
-  // *todo* preliminaries only so far
-  return fetch(url, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
-    headers: new Headers({
-      'Content-Type': 'application/json',
-    }),
-  })
-    .then(result => {
-      const type = result.headers.get('Content-Type')
-      console.log('result content type: ' + type)
-      if (type.includes('text/plain')) {
-        return result.text()
-      } else {
-        return result.json()
-      }
-    })
-    .then(result => {
-      if (typeof result !== 'object') {
-        return {
-          ok: true,
-          msg: 'Added member: ' + ', (string) ' + result
-        }
-      } else {
-        return {
-          ok: result.ok,
-          msg: 'Added member: ' + member + ', ' + result.msg
-        }
-      }
-    })
-    .catch(err => {
-      console.log('addProjectMember:error ' + err)
-      return {ok: false, msg: 'cmd:addProjectMember:error: ' + err, member: member}
     })
 }
 
