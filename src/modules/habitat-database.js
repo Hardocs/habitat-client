@@ -108,9 +108,42 @@ const storeHardocsObject = (locale, project, data = {}) => {
 
 
 // this is the local save, after editing,  and before any replications to the cloud
+function processError (err, prefix = null) {
+  // *todo* !!!! refactor all to stack-reporting method like this
+  try {
+    let msg = prefix
+      ? 'error:' + prefix + ':'
+      : 'error:'
+
+    if (typeof err === 'Error') {
+      msg += err.stack
+    }
+    else if (typeof err === 'object') {
+      msg = err.stack
+        ? err.stack
+        : JSON.stringify(err)
+    }
+    else { // it should be a string
+      msg += err
+    }
+    console.log ('error:' + msg)
+    return { ok: false, msg: msg }
+  } catch (e) {
+    // abso nothing fancy in here, as above error processing has failed itself
+    const msg = 'error in ProcessError!: ' + e.stack
+    console.log (msg)
+    return { ok: false, msg: msg }
+  }
+}
+
 // we should merge ts and save HabitatObject, with an argument whether to timestamp or not
-const saveProjectObject = (projectObject, clear = false, dbName = 'habitat-projects') => {
+const saveProjectObject = (projectObject, dbName = 'habitat-projects') => {
   return new Promise((resolve, reject) => {
+
+    // establish timestamp we'll use and send back, where it's available
+    // it's not important that it be at exact instant of upsert succeeding
+    const timeStamp = Date.now()
+
     const db = createOrOpenDatabase(dbName)
     getStatusFromDb(db)
       .then(result => {
@@ -118,43 +151,43 @@ const saveProjectObject = (projectObject, clear = false, dbName = 'habitat-proje
 
         // let's use our repaired version of the utility
         const updateFunction = (doc) => {
-          // note that we use moment of saving work, not of upload
-          // now() can drift slightly, but only possible, and good enough for us
+          // note that we crucially use moment of saving work, not of upload,
+          // as it's when the work is saved locally that makes it current
 
-
-          // some notes to merge, or on the other side
-          // crucial: here is where the timestamp needs to be updated,
-          // as it is the workstation's save time that should win.
-          // n.b. we are not interested in when it may update, even if that
-          // at present could be at the same time. In future stages, definitely not.
-          // habitatObject.timestamp = Date.now()
           // Do not touch; as our own conflict resolution stages begin here
 
-          doc.timestamp = Date.now(),
+          doc.timestamp = timeStamp
+
+          // this is where we actually update these in, thus if other
+          // Hardocs Object elements are added, must write those here too
+
           doc.hdFrame = projectObject.hdFrame
           doc.hdObject = projectObject.hdObject
+
+          // for our needs, all values here can and must always be the same
           return doc
         }
         return upsertJsonToDb (db, projectObject._id, updateFunction)
       })
       .then(result => {
+        // add timestamp in as result only gives the updated rev, not the updated object
+        result = Object.assign(result, { timestamp: timeStamp})
         console.log ('saveProjectObject result: ' + JSON.stringify(result))
         resolve(result)
       })
       .catch(err => {
-        console.log('saveProjectObject:error: ' + err)
-        reject(err)
+        reject(processError(err, 'saveProjectObject'))
       })
   })
 }
 
-// this is used at present to save from loading cloud version
-const saveHabitatObject = (habitatObject, clear = false, dbName = 'habitat-projects') => {
+// this is used at to save with no _rev change, from loading cloud version
+const saveObjectNoEdit = (habitatObject, dbName = 'habitat-projects') => {
   return new Promise((resolve, reject) => {
     const db = createOrOpenDatabase(dbName)
     getStatusFromDb(db)
       .then(result => {
-        console.log('saveHabitatObject:status: ' + JSON.stringify(result))
+        console.log('saveObjectNoEdit:status: ' + JSON.stringify(result))
         // console.log ('storeHardocsObject:data: ' + JSON.stringify(data))
         return
       })
@@ -163,12 +196,12 @@ const saveHabitatObject = (habitatObject, clear = false, dbName = 'habitat-proje
         return putJsonToDb(db, habitatObject, { new_edits: false })
       })
       .then(result => {
-        console.log ('saveHabitatObject: ' + JSON.stringify(result))
+        console.log ('saveObjectNoEdit: ' + JSON.stringify(result))
         result.ok = true
         resolve(result)
       })
       .catch(err => {
-        console.log('saveHabitatObject:err: ' + err)
+        console.log('saveObjectNoEdit:err: ' + err)
         reject(err)
       })
   })
@@ -298,7 +331,7 @@ export {
   listLocaleProjects,
   readLocalProjectObject,
   saveProjectObject,
-  saveHabitatObject,
+  saveObjectNoEdit,
   updateProjectObject,
   replicateDatabase,
   keyFromParts

@@ -7,7 +7,7 @@ import {
   listLocaleProjects,
   loadHabitatObject,
   storeHardocsObject,
-  saveHabitatObject,
+  saveObjectNoEdit,
   saveProjectObject,
   updateProjectObject,
   replicateDatabase,
@@ -40,7 +40,7 @@ const habitatDb = {
   storeHardocsObject,
   loadHabitatObject,
   saveProjectObject,
-  saveHabitatObject,
+  saveObjectNoEdit,
   updateProjectObject,
   replicateDatabase,
   clearDatabase
