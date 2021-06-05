@@ -32,8 +32,14 @@ const doRequest = (command = 'get-login-identity', url, args = {}) => {
     case 'createLocale':
       result = createLocale(url, args)
       break
+    case 'deleteLocale':
+      result = deleteLocale(url, args)
+      break
     case 'createProject':
       result = createProject(url, args)
+      break
+    case 'deleteProject':
+      result = deleteProject(url, args)
       break
     case 'loadProject':
       result = loadProject(url, args)
@@ -523,8 +529,121 @@ const publishProject = (url, { status, locale, project }) => {
       }
     })
     .catch(err => {
-      console.log('tryGql:error ' + err)
-      return {ok: false, msg: 'cmd:tryGql:error: ' + err }
+      console.log('publishProject:error ' + err)
+      return {ok: false, msg: 'cmd:publishProject:error: ' + err }
+    })
+}
+
+// note - due trepidation before doing this, as entire project will be _gone_
+// thus only an agent can do it, but you must also provide a stop and verify modal
+const deleteProject = (url, { locale, project }) => {
+  console.log('client requesting delete: ' + status
+    + ' for ' + locale + ' - ' + project)
+
+  url += '/habitat-request'
+  const body = {
+    name: 'delete project' +
+      locale + ' - ' + project,
+    cmd: 'deleteProject',
+    publishStatus: status,
+    locale: locale,
+    project: project,
+    json: true
+  }
+
+  console.log('deleteProject:body: ' + JSON.stringify(body))
+
+  return fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
+    headers: new Headers({
+      'Content-Type': 'application/json',
+    }),
+  })
+    // *todo* these blocks ought to be able to be out now, as we are
+    // set on string results?  Or both stages should be refactored into routine
+    .then(result => {
+      const type = result.headers.get('Content-Type')
+      console.log('result content type: ' + type)
+      if (type.includes('text/plain')) {
+        return result.text()
+      } else {
+        return result.json()
+      }
+    })
+    .then(result => {
+      if (typeof result !== 'object') {
+        return {
+          ok: true,
+          msg: 'deleteProject result: ' + ', (string) ' + result
+        }
+      } else {
+        return {
+          ok: result.ok,
+          msg: 'deleteProject result: ' + result.msg
+        }
+      }
+    })
+    .catch(err => {
+      console.log('deleteProject:error ' + err)
+      return {ok: false, msg: 'cmd:deleteProject:error: ' + err }
+    })
+}
+
+// note - due trepidation before doing this, as entire locale will be _gone_
+// thus only an agent can do it, but you must also provide a stop and verify modal
+// *todo* !! we are considering if only superAgent can do it,
+const deleteLocale = (url, { locale, project }) => {
+  console.log('client requesting delete: ' + status
+    + ' for ' + locale + ' - ' + project)
+
+  url += '/habitat-request'
+  const body = {
+    name: 'delete locale ' + locale,
+    cmd: 'deleteLocale',
+    publishStatus: status,
+    locale: locale,
+    json: true
+  }
+
+  console.log('deleteLocale:body: ' + JSON.stringify(body))
+
+  return fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
+    headers: new Headers({
+      'Content-Type': 'application/json',
+    }),
+  })
+    // *todo* these blocks ought to be able to be out now, as we are
+    // set on string results?  Or both stages should be refactored into routine
+    .then(result => {
+      const type = result.headers.get('Content-Type')
+      console.log('result content type: ' + type)
+      if (type.includes('text/plain')) {
+        return result.text()
+      } else {
+        return result.json()
+      }
+    })
+    .then(result => {
+      if (typeof result !== 'object') {
+        return {
+          ok: true,
+          msg: 'deleteLocale result: ' + ', (string) ' + result
+        }
+      } else {
+        return {
+          ok: result.ok,
+          msg: 'deleteLocale result: ' + result.msg
+        }
+      }
+    })
+    .catch(err => {
+      console.log('deleteLocale:error ' + err)
+      return {ok: false, msg: 'cmd:deleteLocale:error: ' + err }
     })
 }
 
