@@ -318,19 +318,18 @@ const uploadProject = (url, { locale, project, projectData, options }) => {
     })
 }
 
-const resolveConflicts = (url, {project, locale, identity, options = {resolve: 'mine'}}) => {
+const resolveConflicts = (url, { project, locale, identity, options = {resolve: 'mine'}}) => {
   console.log('client requesting cloud resolve project: ' + project + ', locale: ' + identity +
     ', identity: ' + identity + ', url: ' + url)
 
   url += '/habitat-request'
   const body = {
-    name: 'create project: ' + project + ', locale: ' +
-      locale + ', identity: ' + identity, // *todo* sort out meanings and/or english for command
+    name: 'create project: ' + assembleId(locale, project, identity),
     cmd: 'resolveConflicts',
     project: project,
     locale: locale,
     identity: identity,
-    options: JSON.stringify(options),
+    options: options,
     json: true
   }
 
@@ -354,15 +353,23 @@ const resolveConflicts = (url, {project, locale, identity, options = {resolve: '
       }
     })
     .then(result => {
+      // *todo* this sort of thing has to go...create a resolver refactor,
+      // *todo* !!!! and use it with the process(Sendable)Error started in db area
+      // *todo* meanwhile:
+      const id = assembleId(locale, project, identity)
+      // *todo* more of that nasty business happens here, for when we fix errors up
       if (typeof result !== 'object') {
         return {
-          ok: true,
-          msg: 'Resolve conflicts: ' + ', (string) ' + result
+          ok: false,
+          msg: 'Resolve conflicts: ' + ', (string) ' + id + ':' + result
         }
       } else {
         return {
+          // *todo* in this case, the msg is json for the winning rev.
+          // *todo* Think on it...do we want a separable data: element, no?
+          // *todo* have a look again at what Pouch calls do
           ok: result.ok,
-          msg: 'Resolve conflicts:project: ' + project + ', ' + result.msg
+          msg: result.msg
         }
       }
     })
@@ -740,6 +747,10 @@ const assureRemoteLogin = (dbName = publicCloud) => {
         }
       })
   })
+}
+
+const assembleId = (locale, project, identity = '(identity)') => {
+  return locale + ':' + project  + ':' + identity
 }
 
 export {
