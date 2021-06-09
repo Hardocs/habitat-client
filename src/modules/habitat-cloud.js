@@ -1,16 +1,22 @@
-
 // these are habitat-hd abilities, rather than CloudDb itself
 // *todo* open calls one way to do it, but a single call as next, and path strings is better
 // *todo* get a controllable logger in here and elsewhere, so no console unless set
 
 // *todo* !! document how our doRequest avoids visibility for almost all db ops
+// *todo* !! probably a lot of refactors into fetch routine, but watch the specificts,
+// *todo* !! and let's safely keep text or json ability, while settling practice at this point
+
+// a statement of policy 09Jun 2021 is that all routines should return a standard
+// object, with ok, potential msg, and data separately if that's provided. This should
+// all occur in the cloud, and that will mean it's normally json coming here, if we
+// sensibly keep the way open for simple text at least for now.
 
 import {getStatusFromDb, safeEnv} from './transport-ifc';
-import {getNodeCookies, loginViaModal, servicesLog} from './habitat-localservices';
+import {loginViaModal, servicesLog} from './habitat-localservices';
 import {createOrOpenDatabase} from './habitat-database';
 
 // it's critical to have PouchDb's fetch(), to get our auth cookies through when doing _commands_
-import { fetch } from 'pouchdb-fetch/lib/index-browser.es'
+import {fetch} from 'pouchdb-fetch/lib/index-browser.es'
 
 const publicCloud = safeEnv(process.env.PUBLIC_CLOUD,
   'https://hd.narrationsd.com/hard-api/habitat-public')
@@ -65,7 +71,7 @@ const doRequest = (command = 'get-login-identity', url, args = {}) => {
       break
     default:
       console.log('doRequest: habitat-client defaulting, no match')
-      result = { ok: false, msg: 'No soap, no capability like: ' + command }
+      result = {ok: false, msg: 'No soap, no capability like: ' + command}
       break
   }
   return result
@@ -76,7 +82,7 @@ const doRequest = (command = 'get-login-identity', url, args = {}) => {
 // There are several critical things, entirely invisible until discovered.
 // One is to set credentials to be included, without which all will fail.
 // More critical yet, is to use PouchDb's _browser_ fetch() -- which leads to
-// un-named _native_, portentially the actual browser's, or something they made.
+// un-named _native_, potentially the actual browser's, or something they made.
 // There is no other fetch() of many kinds tried that will work, and I am
 // surprised that this one does, as it manages to make a call on the web
 // which allows the browser's cookies through. That fact is crucial, as it is
@@ -88,24 +94,24 @@ const doRequest = (command = 'get-login-identity', url, args = {}) => {
 // this particular fetch() of theirs is central and crucial to PouchDb's ability
 // of every kind to interact with CloudDb on the net, their complete intention.
 //
-// But if somehow that fails, we can engage a workaround, less desirable becaause
+// But if somehow that fails, we can engage a workaround, less desirable because
 // it will allow visibility of our commands. This would likely not a particular hazard,
 // if we like to keep things private as a security  practice, because the combination
 // of the proxy's requirement of proven identity, and that we will only permit certain
 // identities to use administrative commands, should keep away any uses of what
-// an ill-doer might observve.  In the end, it's not different from the security of all
+// an ill-doer might observe.  In the end, it's not different from the security of all
 // CouchDb commands, which are often in the open this way.
 //
 // This argument would be true, because the workaround would be to _extend_ on one
 // of the normal CouchDb commands. If we add our command strings beyond the end of
-// the path sequence possible for a normal db command, we can pick that off and
+// the path sequence possible for a normal db command, then we can pick that off and
 // then divert in the command layer, so that we use and return from what we sent,
-// and the CouchDb instance never sees it. But again, what we have now should be
+// while the CouchDb instance never sees it. But again, what we have now should be
 // most secure, and there is little reason to suspect it would ever become unavailable.
 //
 // These notes will move along with the code, at such time that we modularize
 // the overall cloud command abilities.
-const createLocale = (url, { locale, identity }) => {
+const createLocale = (url, {locale, identity}) => {
   console.log('client requesting cloud create locale: ' + identity + ', url: ' + url)
 
   url += '/habitat-request'
@@ -150,11 +156,11 @@ const createLocale = (url, { locale, identity }) => {
     })
     .catch(err => {
       console.log('createLocale:error ' + err)
-      return {ok: false, msg: 'cmd:createLocale:error: ' + err }
+      return {ok: false, msg: 'cmd:createLocale:error: ' + err}
     })
 }
 
-const createProject = (url, { project, locale, identity }) => {
+const createProject = (url, {project, locale, identity}) => {
   console.log('client requesting cloud create project: ' + project + ', locale: ' + identity +
     ', identity: ' + identity + ', url: ' + url)
 
@@ -207,7 +213,7 @@ const createProject = (url, { project, locale, identity }) => {
     })
 }
 
-const downloadProject = (url, { project, locale, identity, options = {} }) => {
+const downloadProject = (url, {project, locale, identity, options = {}}) => {
   console.log('client requesting cloud load project: ' + project + ', locale: ' + identity +
     ', identity: ' + identity + ', url: ' + url, ', options: ' + JSON.stringify(options))
 
@@ -263,7 +269,7 @@ const downloadProject = (url, { project, locale, identity, options = {} }) => {
     })
 }
 
-const uploadProject = (url, { locale, project, projectData, options }) => {
+const uploadProject = (url, {locale, project, projectData, options}) => {
   console.log('client requesting cloud update project: ' + projectData._id + ', url: ' + url)
 
   url += '/habitat-request'
@@ -314,11 +320,11 @@ const uploadProject = (url, { locale, project, projectData, options }) => {
     .catch(err => {
       const msg = 'uploadProject:error: ' + err.stack
       console.log(msg)
-      return {ok: false, msg: msg }
+      return {ok: false, msg: msg}
     })
 }
 
-const resolveConflicts = (url, { project, locale, identity, options = {resolve: 'mine'}}) => {
+const resolveConflicts = (url, {project, locale, identity, options = {resolve: 'mine'}}) => {
   console.log('client requesting cloud resolve project: ' + project + ', locale: ' + identity +
     ', identity: ' + identity + ', url: ' + url)
 
@@ -379,7 +385,7 @@ const resolveConflicts = (url, { project, locale, identity, options = {resolve: 
     })
 }
 
-const tryGql = (url, { query }) => {
+const tryGql = (url, {query}) => {
   console.log('client requesting cloud gql api query: ' + query)
 
   url += '/habitat-request'
@@ -426,17 +432,17 @@ const tryGql = (url, { query }) => {
       // *todo* gql return now correct either way, but test protocol
       // *todo* error in the chain now vs. app?
       console.log('tryGql:error ' + err)
-      return {ok: false, msg: err }
+      return {ok: false, msg: err}
     })
 }
 
-const publishProject = (url, { status, locale, project }) => {
+const publishProject = (url, {status, locale, project}) => {
   console.log('client requesting publish: ' + status
     + ' for ' + locale + ' - ' + project)
 
   url += '/habitat-request'
   const body = {
-    name: 'set publish state: ' + + status
+    name: 'set publish state: ' + +status
       + ' for ' + locale + ' - ' + project,
     cmd: 'publishProject',
     publishStatus: status,
@@ -481,13 +487,13 @@ const publishProject = (url, { status, locale, project }) => {
     })
     .catch(err => {
       console.log('publishProject:error ' + err)
-      return {ok: false, msg: 'cmd:publishProject:error: ' + err }
+      return {ok: false, msg: 'cmd:publishProject:error: ' + err}
     })
 }
 
-// note - due trepidation before doing this, as entire project will be _gone_
+// note - due trepidation before doing this, as entire project will be _gone_,
 // thus only an agent can do it, but you must also provide a stop and verify modal
-const deleteProject = (url, { locale, project }) => {
+const deleteProject = (url, {locale, project}) => {
   console.log('client requesting delete: ' + status
     + ' for ' + locale + ' - ' + project)
 
@@ -538,14 +544,14 @@ const deleteProject = (url, { locale, project }) => {
     })
     .catch(err => {
       console.log('deleteProject:error ' + err)
-      return {ok: false, msg: 'cmd:deleteProject:error: ' + err }
+      return {ok: false, msg: 'cmd:deleteProject:error: ' + err}
     })
 }
 
-// note - due trepidation before doing this, as entire locale will be _gone_
+// note - due trepidation before doing this, as entire locale will be _gone_,
 // thus only an agent can do it, but you must also provide a stop and verify modal
 // *todo* !! we are considering if only superAgent can do it,
-const deleteLocale = (url, { locale, project }) => {
+const deleteLocale = (url, {locale, project}) => {
   console.log('client requesting delete: ' + status
     + ' for ' + locale + ' - ' + project)
 
@@ -594,13 +600,13 @@ const deleteLocale = (url, { locale, project }) => {
     })
     .catch(err => {
       console.log('deleteLocale:error ' + err)
-      return {ok: false, msg: 'cmd:deleteLocale:error: ' + err }
+      return {ok: false, msg: 'cmd:deleteLocale:error: ' + err}
     })
 }
 
 const dbExists = (dbName) => {
   // *todo* convenience before the habitat-hd implementation
-  return { ok: true, msg: dbName + ' isn\'t present', dbExists: false }
+  return {ok: true, msg: dbName + ' isn\'t present', dbExists: false}
 }
 
 const initializeCloud = (url) => {
@@ -615,7 +621,7 @@ const initializeCloud = (url) => {
   return habitatRequest(url, body)
     .then(result => {  // fetch returns a Result object, must decode
       const type = result.headers.get('Content-Type')
-      console.log ('result content type: ' + type)
+      console.log('result content type: ' + type)
       if (type.includes('text/plain')) {
         return result.text()
       } else {
@@ -644,7 +650,7 @@ const getLoginIdentity = (url) => {
   return habitatRequest(url, body)
     .then(result => {  // fetch returns a Result object, must decode
       const type = result.headers.get('Content-Type')
-      console.log ('result content type: ' + type)
+      console.log('result content type: ' + type)
       if (type.includes('text/plain')) {
         return result.text()
       } else {
@@ -673,7 +679,7 @@ const checkRoles = (url) => {
   return habitatRequest(url, body)
     .then(result => {  // fetch returns a Result object, must decode
       const type = result.headers.get('Content-Type')
-      console.log ('result content type: ' + type)
+      console.log('result content type: ' + type)
       if (type.includes('text/plain')) {
         return result.text()
       } else {
@@ -705,13 +711,13 @@ function habitatRequest (url, body) {
 }
 
 const assureRemoteLogin = (dbName = publicCloud) => {
-  return new Promise ((resolve, reject) => {
-    const db = createOrOpenDatabase(dbName, { skip_setup: true }) // don't attempt create
+  return new Promise((resolve, reject) => {
+    const db = createOrOpenDatabase(dbName, {skip_setup: true}) // don't attempt create
     getStatusFromDb(db)
-      .then (result => {
+      .then(result => {
         servicesLog('assureRemoteLogin:checkStatus: ' + JSON.stringify(result))
-        console.log ('logged in...')
-        resolve ({ ok: true, msg: 'logged in to ' + dbName })
+        console.log('logged in...')
+        resolve({ok: true, msg: 'logged in to ' + dbName})
       })
       .catch(err => {
         // Be very careful here. There are different responses from the oauth2-proxy,
@@ -722,27 +728,29 @@ const assureRemoteLogin = (dbName = publicCloud) => {
         // the connection outright.
         //
         // Curious, actually, as the cases are really in some sense 401 and 403, but
-        // what exists is they play it, and in any case, Pouch api doesn't let us see or
+        // what exists is they play it, and in any case, Pouch api doesn't let us see, or
         // otherwise deal very sensibly, so we have to check the strings to act well ourselves.
 
         if (!err.toString().includes('Unexpected end of JSON input') // no oauth2 cookie
           && !err.toString().includes('Failed to fetch') // not logged in to identity
         ) {
-          reject ({ ok: false, msg: 'assureRemoteLogin:unexpected: '
-              + dbName + ' status check error: ' + JSON.stringify(err)})
+          reject({
+            ok: false, msg: 'assureRemoteLogin:unexpected: '
+              + dbName + ' status check error: ' + JSON.stringify(err)
+          })
         } else {
           servicesLog('need to log in to ' + dbName + ', as rejected without identity')
           const dbPathOnly = dbName.split('/')
           const db = dbPathOnly.pop() // just the host, not the db
           const dbHost = dbPathOnly.join('/')
           loginViaModal(dbHost + '/sign_in')
-            .then (result => {
+            .then(result => {
               // console.log('assureRemoteLogin:logInViaModel result: ' + result + db)
-              resolve ({ ok: true, msg: result + db })
+              resolve({ok: true, msg: result + db})
             })
             .catch(err => {
               // console.log('assureRemoteLogin:logInViaModel error: ' + err)
-              reject ({ ok: false, msg: err })
+              reject({ok: false, msg: err})
             })
         }
       })
@@ -750,7 +758,7 @@ const assureRemoteLogin = (dbName = publicCloud) => {
 }
 
 const assembleId = (locale, project, identity = '(identity)') => {
-  return locale + ':' + project  + ':' + identity
+  return locale + ':' + project + ':' + identity
 }
 
 export {

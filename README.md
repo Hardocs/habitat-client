@@ -1,11 +1,19 @@
 ---
 ---
 
-# Habitat Client API - 29 November 2020
+# Habitat Client API - beginning to update this 09 Jun 2021
 
 ## Status
 
 This is the client-side API for Habitat, the local and cloud services package for Hardocs.
+
+## Publishing
+
+N.b. there are several publishing codes, providing for alpha and beta versions, as well as purely dev processing to work with `yarn link` in convenient development.  But watch out...npm is required for any of the publishing steps.  For example:
+
+- `yarn dev` - rebuilds the lib, so that a linked project will see it
+- `npm run apub` - but this is the only way to update the npm repository
+
 
 There are two primary versions active at present:
 
