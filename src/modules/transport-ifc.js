@@ -1,36 +1,11 @@
 // here all database interactions are abstracted, thus decoupled
 
 import PouchDb from 'pouchdb';
-// // import PouchDbFind from 'pouchdb-find';
-// import PouchDbUpsert from 'pouchdb-upsert';
-// import { v4 as uuidv4 } from 'uuid'
-//
-// // PouchDb.plugin(PouchDbFind)
-// PouchDb.plugin(PouchDbUpsert)
-// // const PouchDb = require('pouchdb')
-// // PouchDb.plugin(require('pouchdb-upsert'));
-
-// this is called 'dirtyfixing'. It certainly is.
-// from: https://github.com/pouchdb/pouchdb/issues/6645#issuecomment-344706842
-// we do it minus the types, as we're not TypeScript here
-
-// // import * as rawPouch from 'pouchdb';
-// // import * as rawFind from 'pouchdb-find';
-// import * as rawUpsert from 'pouchdb-upsert';
-//
-// // const PouchDb = rawPouch.default;
-// // const find = rawFind.default;
-// const upsert = rawUpsert;
-
 import upsert from './pouchdb-our-upsert'
 
-// PouchDb.plugin(find);
 PouchDb.plugin(upsert);
 
 const createOrOpenDb = (dbName, opts = {}) => {
-  // opts = Object.assign(opts, {
-  //   // revs_limit: 1 // *todo* easy way; much of interest to actually decide here, affects all
-  // })
   return new PouchDb(dbName/*, opts*/)
 }
 
@@ -59,11 +34,6 @@ const findJsonFromDb = (db, query) => {
 }
 
 const putJsonToDb = (db, data, options = {}) => {
-  // *todo* from now on, we'll use our own ids, sensible to data,
-  // *todo* but for now, this is left for original demo, out soon
-  if (!data._id) {
-    data._id = uuidv4()
-  }
   return db.put(data, options)
 }
 
@@ -95,18 +65,7 @@ const destroyDb = (db) => {
   return db.destroy()
 }
 
-// eslint-disable-next-line
 const upsertJsonToDb = (db, id, diffFunc) => {
-
-  // return new Promise((resolve, reject) => {
-  //   reject ( 'Upsert not available, will be provided later...instead, use Put')
-  // })
-
-  // the original code here wasn't a good idea - web people publish such...
-  // concept was wrong, but especially, precluded wider area concepts we need
-  // when code is provided, we'll also properly remove the lint disable preceding
-
-  // so let's make it work
   return db.upsert(id, diffFunc)
 }
 
