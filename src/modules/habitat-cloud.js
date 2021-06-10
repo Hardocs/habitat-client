@@ -29,7 +29,7 @@ function handleHabitatCloudResult (promiseResult) {
 
   const typedResult = (result) => {
     const type = result.headers.get('Content-Type')
-    console.log('result content type: ' + type)
+    // console.log('handleHabitatCloudResult:result content type: ' + type)
     if (type.includes('text/plain')) {
       return result.text()
     } else {
@@ -40,17 +40,17 @@ function handleHabitatCloudResult (promiseResult) {
   return Promise.resolve(typedResult(promiseResult))
     .then (result => {
 
-      console.log ('typed from promises result is: ' + result)
+      // console.log ('handleHabitatCloudResult:typed from promises result is: ' + JSON.stringify(result))
 
       if (typeof result !== 'object') {
-        console.log('returning from string result')
+        // console.log('handleHabitatCloudResult:string result')
         return {
           ok: true,
           data: {no: 'data'},
           msg: result
         }
       } else {
-        console.log('returning from json object result: ' + result)
+        // console.log('handleHabitatCloudResult:json object result: ' + JSON.stringify(result))
         // we parse here, so the app doesn't have to
         // be careful: thrown errors in cloud won't have data returning
         let data = result.data
@@ -287,10 +287,15 @@ const loadProjectUnresolved = (url, {project, locale, identity, options = {}}) =
     .then(result => {
       return handleHabitatCloudResult(result)
     })
-    .catch(err => {
-      console.log('loadProjectUnresolved:error ' + err)
-      return {ok: false, msg: 'cmd:loadProjectUnresolved:error: ' + err, project: project}
+    .then (handled => {
+      if (!handled.ok) {
+        console.log ('handled.ok false!!')
+        // ok: false means a real error here, is not informational
+        throw new Error (handled.msg)  // then this makes a simpler api pattern
+      }
+      return handled
     })
+    // we don't catch, so that throws are caught  directly in api
 }
 
 const uploadProject = (url, {locale, project, projectData, options}) => {
@@ -318,33 +323,17 @@ const uploadProject = (url, {locale, project, projectData, options}) => {
     }),
   })
     .then(result => {
-      const type = result.headers.get('Content-Type')
-      console.log('result content type: ' + type)
-
-      // *todo* !!! surely a method for boilerplate that follows, asap
-      if (type.includes('text/plain')) {
-        return result.text()
-      } else {
-        return result.json()
-      }
+      return handleHabitatCloudResult(result)
     })
-    .then(result => {
-      if (typeof result !== 'object') {
-        return {
-          ok: true,
-          msg: 'Updating project: ' + ', (string) ' + result
-        }
-      } else {
-        return {
-          ok: result.ok,
-          msg: 'Updating project: ' + projectData._id + ', ' + result.msg
-        }
+    .then (handled => {
+      if (!handled.ok) {
+        // ok: false means a real error here, is not informational
+        throw new Error (handled.msg)  // then this makes a simpler api pattern
       }
-    })
-    .catch(err => {
-      const msg = 'uploadProject:error: ' + err.stack
-      console.log(msg)
-      return {ok: false, msg: msg}
+      return {
+        ok: handled.ok,
+        msg: 'Updating project: ' + projectData._id + ', ' + handled.msg
+      }
     })
 }
 
@@ -369,7 +358,6 @@ const loadProjectResolve = (url, {project, locale, identity,
   }
 
   console.log('loadProjectResolve:body: ' + JSON.stringify(body))
-  // *todo* preliminaries only so far
   return fetch(url, {
     method: 'POST',
     body: JSON.stringify(body),
@@ -379,11 +367,17 @@ const loadProjectResolve = (url, {project, locale, identity,
     }),
   })
     .then(result => {
+      console.log ('loadProjectResolve":firstresult: ' + JSON.stringify(result))
       return handleHabitatCloudResult(result)
     })
-    .catch(err => {
-      console.log('resolve conflicts:error ' + err)
-      return {ok: false, msg: 'cmd:loadProjectResolve:error: ' + err, data: { no: 'data'}}
+    .then (handled => {
+      console.log ('handled: ' + JSON.stringify(handled))
+      if (!handled.ok) {
+        console.log ('handled.ok false!!')
+        // ok: false means a real error here, is not informational
+        throw new Error (handled.msg)  // then this makes a simpler api pattern
+      }
+      return handled
     })
 }
 
