@@ -21,6 +21,51 @@ import {fetch} from 'pouchdb-fetch/lib/index-browser.es'
 const publicCloud = safeEnv(process.env.PUBLIC_CLOUD,
   'https://hd.narrationsd.com/hard-api/habitat-public')
 
+// we're not actually entertaining string results any more, but
+// if we would in future, this safeties those and errors also
+// as far as values, all life is a Promise, no?
+// *todo* !!! needs to be applied everywhere
+function handleHabitatCloudResult (promiseResult) {
+
+  const typedResult = (result) => {
+    const type = result.headers.get('Content-Type')
+    console.log('result content type: ' + type)
+    if (type.includes('text/plain')) {
+      return result.text()
+    } else {
+      return result.json()
+    }
+  }
+
+  return Promise.resolve(typedResult(promiseResult))
+    .then (result => {
+
+      console.log ('typed from promises result is: ' + result)
+
+      if (typeof result !== 'object') {
+        console.log('returning from string result')
+        return {
+          ok: true,
+          data: {no: 'data'},
+          msg: result
+        }
+      } else {
+        console.log('returning from json object result: ' + result)
+        // we parse here, so the app doesn't have to
+        // be careful: thrown errors in cloud won't have data returning
+        let data = result.data
+          ? JSON.parse(result.data) // unexpected errors caught in calling routine
+          : {}
+
+        return {
+          ok: result.ok,
+          data: data,
+          msg: result.msg
+        }
+      }
+    })
+}
+
 const doRequest = (command = 'get-login-identity', url, args = {}) => {
   console.log('habitat-cloud:doRequest: <' + command +
     ', args: ' + JSON.stringify(args) + '>')
@@ -47,11 +92,11 @@ const doRequest = (command = 'get-login-identity', url, args = {}) => {
     case 'deleteProject':
       result = deleteProject(url, args)
       break
-    case 'downloadProject':
-      result = downloadProject(url, args)
+    case 'loadProjectUnresolved':
+      result = loadProjectUnresolved(url, args)
       break
-    case 'resolveConflicts':
-      result = resolveConflicts(url, args)
+    case 'loadProjectResolve':
+      result = loadProjectResolve(url, args)
       break
     case 'uploadProject':
       result = uploadProject(url, args)
@@ -213,15 +258,15 @@ const createProject = (url, {project, locale, identity}) => {
     })
 }
 
-const downloadProject = (url, {project, locale, identity, options = {}}) => {
+const loadProjectUnresolved = (url, {project, locale, identity, options = {}}) => {
   console.log('client requesting cloud load project: ' + project + ', locale: ' + identity +
     ', identity: ' + identity + ', url: ' + url, ', options: ' + JSON.stringify(options))
 
   url += '/habitat-request'
   const body = {
-    name: 'load project: ' + project + ', locale: ' +
+    name: 'download unresolved project: ' + project + ', locale: ' +
       locale + ', identity: ' + identity, // *todo* sort out meanings and/or english for command
-    cmd: 'downloadProject',
+    cmd: 'loadProjectUnresolved',
     project: project,
     locale: locale,
     identity: identity,
@@ -229,7 +274,7 @@ const downloadProject = (url, {project, locale, identity, options = {}}) => {
     json: true
   }
 
-  console.log('downloadProject:body: ' + JSON.stringify(body))
+  console.log('loadProjectUnresolved:body: ' + JSON.stringify(body))
   // *todo* preliminaries only so far
   return fetch(url, {
     method: 'POST',
@@ -240,32 +285,11 @@ const downloadProject = (url, {project, locale, identity, options = {}}) => {
     }),
   })
     .then(result => {
-      const type = result.headers.get('Content-Type')
-      console.log('result content type: ' + type)
-      if (type.includes('text/plain')) {
-        return result.text()
-      } else {
-        return result.json()
-      }
-    })
-    .then(result => {
-      if (typeof result !== 'object') {
-        console.log('returning from string result')
-        return {
-          ok: true,
-          msg: result
-        }
-      } else {
-        console.log('returning from json object result')
-        return {
-          ok: result.ok,
-          msg: result.msg
-        }
-      }
+      return handleHabitatCloudResult(result)
     })
     .catch(err => {
-      console.log('createProject:error ' + err)
-      return {ok: false, msg: 'cmd:downloadProject:error: ' + err, project: project}
+      console.log('loadProjectUnresolved:error ' + err)
+      return {ok: false, msg: 'cmd:loadProjectUnresolved:error: ' + err, project: project}
     })
 }
 
@@ -324,14 +348,19 @@ const uploadProject = (url, {locale, project, projectData, options}) => {
     })
 }
 
-const resolveConflicts = (url, {project, locale, identity, options = {resolve: 'mine'}}) => {
-  console.log('client requesting cloud resolve project: ' + project + ', locale: ' + identity +
-    ', identity: ' + identity + ', url: ' + url)
+// we're implementing for a one-shot latestWins resolve here,
+// but hopefully prepared with a command which could involve stages
+// the semantics of the name are open for that
+
+const loadProjectResolve = (url, {project, locale, identity,
+  options = {resolveMode: 'latestWins'}}) => {
+  console.log('load clouud project resolve: ' + project + ', locale: ' + identity +
+    ', identity: ' + identity + ', url: ' + url +', mode: ' + options.resolveMode )
 
   url += '/habitat-request'
   const body = {
-    name: 'create project: ' + assembleId(locale, project, identity),
-    cmd: 'resolveConflicts',
+    name: 'load cloud Project resolved: ' + assembleId(locale, project, identity),
+    cmd: 'loadProjectResolve',
     project: project,
     locale: locale,
     identity: identity,
@@ -339,7 +368,7 @@ const resolveConflicts = (url, {project, locale, identity, options = {resolve: '
     json: true
   }
 
-  console.log('resolveConflicts:body: ' + JSON.stringify(body))
+  console.log('loadProjectResolve:body: ' + JSON.stringify(body))
   // *todo* preliminaries only so far
   return fetch(url, {
     method: 'POST',
@@ -350,38 +379,11 @@ const resolveConflicts = (url, {project, locale, identity, options = {resolve: '
     }),
   })
     .then(result => {
-      const type = result.headers.get('Content-Type')
-      console.log('result content type: ' + type)
-      if (type.includes('text/plain')) {
-        return result.text()
-      } else {
-        return result.json()
-      }
-    })
-    .then(result => {
-      // *todo* this sort of thing has to go...create a resolver refactor,
-      // *todo* !!!! and use it with the process(Sendable)Error started in db area
-      // *todo* meanwhile:
-      const id = assembleId(locale, project, identity)
-      // *todo* more of that nasty business happens here, for when we fix errors up
-      if (typeof result !== 'object') {
-        return {
-          ok: false,
-          msg: 'Resolve conflicts: ' + ', (string) ' + id + ':' + result
-        }
-      } else {
-        return {
-          // *todo* in this case, the msg is json for the winning rev.
-          // *todo* Think on it...do we want a separable data: element, no?
-          // *todo* have a look again at what Pouch calls do
-          ok: result.ok,
-          msg: result.msg
-        }
-      }
+      return handleHabitatCloudResult(result)
     })
     .catch(err => {
       console.log('resolve conflicts:error ' + err)
-      return {ok: false, msg: 'cmd:resolveConflicts:error: ' + err, project: project}
+      return {ok: false, msg: 'cmd:loadProjectResolve:error: ' + err, data: { no: 'data'}}
     })
 }
 
@@ -442,8 +444,8 @@ const publishProject = (url, {status, locale, project}) => {
 
   url += '/habitat-request'
   const body = {
-    name: 'set publish state: ' + +status
-      + ' for ' + locale + ' - ' + project,
+    name: 'set publish state: ' + +status +
+      ' for ' + locale + ' - ' + project,
     cmd: 'publishProject',
     publishStatus: status,
     locale: locale,
@@ -499,8 +501,7 @@ const deleteProject = (url, {locale, project}) => {
 
   url += '/habitat-request'
   const body = {
-    name: 'delete project' +
-      locale + ' - ' + project,
+    name: 'delete project' + locale + ' - ' + project,
     cmd: 'deleteProject',
     publishStatus: status,
     locale: locale,
@@ -613,7 +614,7 @@ const initializeCloud = (url) => {
 
   console.log('client requesting cloud initialize: ' + url)
   const body = {
-    name: 'initializing', // *todo* sort out meanings and/or english for command
+    name: 'initialize cloud', // *todo* sort out meanings and/or english for command
     cmd: 'initializeHabitat',
     json: true
   }
@@ -728,7 +729,7 @@ const assureRemoteLogin = (dbName = publicCloud) => {
         // the connection outright.
         //
         // Curious, actually, as the cases are really in some sense 401 and 403, but
-        // what exists is they play it, and in any case, Pouch api doesn't let us see, or
+        // what exists is they play it, and in any case, Pouch api doesn't let us see or
         // otherwise deal very sensibly, so we have to check the strings to act well ourselves.
 
         if (!err.toString().includes('Unexpected end of JSON input') // no oauth2 cookie
