@@ -16,10 +16,42 @@ import {loginViaModal, servicesLog} from './habitat-localservices';
 import {createOrOpenDatabase} from './habitat-database';
 
 // it's critical to have PouchDb's fetch(), to get our auth cookies through when doing _commands_
+// underneath is actually node-fetch, so we have some services for errors there
 import {fetch} from 'pouchdb-fetch/lib/index-browser.es'
+
+// but we want to use node-fetch also for its raw check on connection initially...
+const nodeFetch = require ('node-fetch')
 
 const publicCloud = safeEnv(process.env.PUBLIC_CLOUD,
   'https://hd.narrationsd.com/hard-api/habitat-public')
+
+// see that our connection is alive and pathed
+
+const assureCloudConnection = (url) => {
+  // url = 'https://looloooloola.com'
+  return nodeFetch (url)
+    .then (checkFetchStatus)
+    .then (result => {
+      console.log('assureCloudConnection:json: ' + result.json())
+      return JSON.stringify(result.json)
+    })
+    .then (body => { return body })
+    .catch (err => {
+      console.log ('checkFetchStatus:FetchError?: ' + err)
+      return 'error: ' + err.stack
+    })
+}
+
+// *todo* this can be useful, should be applied in universal result handler refactor coming
+const checkFetchStatus = (res) => {
+  if (res.ok) { // res.status >= 200 && res.status < 300
+    return res
+  } else {
+    const msg = 'Habitat cloud not responding as expected: ' + res.statusText
+    console.log('checkFetchStatus:err: ' + msg)
+    throw new Error(msg)
+  }
+}
 
 // we're not actually entertaining string results any more, but
 // if we would in future, this safeties those and errors also
@@ -642,7 +674,14 @@ const getLoginIdentity = (url) => {
   }
   console.log('client requesting login identity: ' + url + ', body: ' + JSON.stringify(body))
 
-  return habitatRequest(url, body)
+  // *todo* what's been done here needs to refactor into habitatRequest itself,
+  // *todo* tbd soon, and will eliminate much discovery boilerplate through this file
+  // *todo* experiments with url path here shows cloud should give a response with
+  // *todo* CORS if that's possible, if a bad path appears. This may well be an
+  // *todo* nginx config rather than a change within the cloud, though the
+  // *todo* cloud may possibly provide the response given a rewritten call for this
+  return habitatRequest(url/* +'x'*/, body)
+    .then(checkFetchStatus)
     .then(result => {  // fetch returns a Result object, must decode
       const type = result.headers.get('Content-Type')
       console.log('result content type: ' + type)
@@ -652,13 +691,11 @@ const getLoginIdentity = (url) => {
         return result.json()
       }
     })
-    .then(result => {
-      console.log('fetch result: ' + JSON.stringify(result))
-      return result
-    })
     .catch(err => {
-      console.log('fetch err: ' + JSON.stringify(err))
-      return err
+      const msg = 'Couldn\'t communicate with Habitat cloud:' +
+        'check browser console: ' + err
+      console.log(msg)
+      throw new Error (msg) // how we inform app client on all errors, now
     })
 }
 
@@ -705,12 +742,22 @@ function habitatRequest (url, body) {
   });
 }
 
-const assureRemoteLogin = (dbName = publicCloud) => {
+// *todo* !!!! this needs to be replaced now that we don\'t allow direct db acccess
+// *todo* it will require another doRequest function to see we're authorized
+// this could have been very much better if Pouch didn't hide the node-fetch status,
+// but we need to use it for its crucial auth cookie-handling behavior on CouchDB
+// See work on assureCloudConnection(), and notes on what doesn't function there
+const assureRemoteLogin = async (dbName = publicCloud) =>  {
+  // *todo* this was just a test to see if we could gain -- not really but maybe in upgrade above
+  // console.log ('assuring connection: ' + await assureCloudConnection(dbName))
+
   return new Promise((resolve, reject) => {
     const db = createOrOpenDatabase(dbName, {skip_setup: true}) // don't attempt create
     getStatusFromDb(db)
       .then(result => {
-        servicesLog('assureRemoteLogin:checkStatus: ' + JSON.stringify(result))
+        // *todo* the actual db access is now failing, see above for upgrade, but
+        // *todo* we're actually fine here for the moment, since we didn't exception access itself
+        // servicesLog('assureRemoteLogin:checkStatus: ' + JSON.stringify(result))
         console.log('logged in...')
         resolve({ok: true, msg: 'logged in to ' + dbName})
       })
