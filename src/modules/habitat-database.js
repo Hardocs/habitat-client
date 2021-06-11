@@ -136,8 +136,15 @@ function processError (err, prefix = null) {
   }
 }
 
-// we should merge ts and save HabitatObject, with an argument whether to timestamp or not
-const saveProjectObject = (projectObject, dbName = 'habitat-projects') => {
+
+// The dataCallback method is essential, so app's Project gets updated
+// also, must specify it as dataCallback.bind(this), otherwise failure,
+// as 'this' will be that local to present method, not to the calling app.
+// All care here means all simplicity in the app's use of this api
+const saveProjectObject = (
+  projectObject,
+  dataCallback,
+  dbName = 'habitat-projects') => {
   return new Promise((resolve, reject) => {
 
     // establish timestamp we'll use and send back, where it's available
@@ -150,11 +157,11 @@ const saveProjectObject = (projectObject, dbName = 'habitat-projects') => {
         console.log('saveProjectObject:status: ' + JSON.stringify(result))
 
         // let's use our repaired version of the utility
-        const updateFunction = (doc) => {
+        const upsertFunction = (doc) => {
           // note that we crucially use moment of saving work, not of upload,
           // as it's when the work is saved locally that makes it current
 
-          // Do not touch; as our own conflict resolution stages begin here
+          // Do not touch; as our own conflict resolution stage abilities begin here
 
           doc.timestamp = timeStamp
 
@@ -167,13 +174,29 @@ const saveProjectObject = (projectObject, dbName = 'habitat-projects') => {
           // for our needs, all values here can and must always be the same
           return doc
         }
-        return upsertJsonToDb (db, projectObject._id, updateFunction)
+        return upsertJsonToDb (db, projectObject._id, upsertFunction)
       })
       .then(result => {
-        // add timestamp in as result only gives the updated rev, not the updated object
-        result = Object.assign(result, { timestamp: timeStamp})
+
+        // we don't care about result.updated, or its meaning, since our
+        // upsert callback always operates; dosen't
+
+        if (!result.updated) {
+          throw new Error ("local project upsert failed")
+        }
+
+        // careful here also:  add timestamp in here also, as result only gives
+        // the updated rev with id, not the updated object
+        result = Object.assign(result, { timestamp: timeStamp })
+
         console.log ('saveProjectObject result: ' + JSON.stringify(result))
-        resolve(result)
+        dataCallback (result) // our essential step...so original Project updates
+
+        resolve({
+          ok: true,
+          msg: 'Project saved locally',
+          data: result }
+        ) // we also return it, in local style
       })
       .catch(err => {
         reject(processError(err, 'saveProjectObject'))
