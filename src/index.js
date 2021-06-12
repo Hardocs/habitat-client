@@ -1,16 +1,14 @@
 // expose the habitat database modules for npm
 
 import {
-  readLocalProjectObject,
   createOrOpenDatabase,
   getStatusOfDb,
   listLocaleProjects,
-  loadHabitatObject,
-  storeHardocsObject,
-  saveObjectNoEdit,
-  saveProjectObject,
+  loadProjectObject,
+  storeProjectObjectSameRev,
+  storeProjectObject,
   updateProjectObject,
-  replicateDatabase,
+  replicateFromToDatabase,
   clearDatabase
 } from './modules/habitat-database'
 
@@ -33,16 +31,14 @@ import {
 } from './modules/habitat-cloud'
 
 const habitatDb = {
-  readLocalProjectObject,
   createOrOpenDatabase,
   getStatusOfDb,
   listLocaleProjects,
-  storeHardocsObject,
-  loadHabitatObject,
-  saveProjectObject,
-  saveObjectNoEdit,
+  loadProjectObject,
+  storeProjectObject,
+  storeProjectObjectSameRev,
   updateProjectObject,
-  replicateDatabase,
+  replicateFromToDatabase,
   clearDatabase
 }
 

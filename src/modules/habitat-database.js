@@ -31,7 +31,7 @@ import {
 
 const localDbName = 'habitat-projects' // will always be, matching Habitat HD
 
-const readLocalProjectObject =  (locale = 'firstLocale',
+const loadProjectObject =  (locale = 'firstLocale',
                             project = 'firstProject',
                             identity) => {
   return new Promise ((resolve, reject) => {
@@ -42,70 +42,18 @@ const readLocalProjectObject =  (locale = 'firstLocale',
     const db = createOrOpenDatabase(localDbName)
     getStatusFromDb(db)
       .then (result => {
-        console.log ('readLocalProjectObject:status: ' + JSON.stringify(result))
+        console.log ('loadProjectObject:status: ' + JSON.stringify(result))
         return getJsonFromDb(db, projectId)
       })
       .then (result => {
-        console.log('readLocalProjectObject:result: ' + JSON.stringify(result))
-        // be consistent in our messaging, result always a string
-        const dbContent = { ok: true, msg: JSON.stringify(result)}
-        resolve (dbContent)
+        console.log('loadProjectObject:result: ' + JSON.stringify(result))
+        resolve ({ ok: true, msg: 'Loaded Db Project Object', data: result })
       })
       .catch (err => {
-        console.log ('readLocalProjectObject:error: ' + err)
-        reject (err)
+        reject (processError(err, 'loadProjectObject'))
       })
   })
 }
-
-
-// *todo* skeleton not at all right or necessarily needed - see design progress
-const loadHabitatObject =  (locale = 'habitat-projects',
-                            project = 'firstProject') => {
-  return new Promise ((resolve, reject) => {
-    const db = createOrOpenDatabase(locale)
-    getStatusFromDb(db)
-      .then (result => {
-        console.log ('loadHabitatObject:status: ' + JSON.stringify(result))
-        console.log ('loadHabitatObject:key: ' + keyFromParts(locale, project))
-        return getJsonFromDb(db, project)
-      })
-      .then (result => {
-        console.log('loadHabitatObject:result: ' + JSON.stringify(result))
-        resolve (result)
-      })
-      .catch (err => {
-        console.log ('loadHabitatObject:error: ' + err)
-        reject (err)
-      })
-  })
-}
-
-// *todo* skeleton not at all right or necessarily needed - see design progress
-const storeHardocsObject = (locale, project, data = {}) => {
-
-  return new Promise ((resolve, reject) => {
-    const db = createOrOpenDatabase(locale)
-    getStatusFromDb(db)
-      .then (result => {
-        console.log ('storeHardocsObject:status: ' + JSON.stringify(result))
-        // console.log ('storeHardocsObject:data: ' + JSON.stringify(data))
-        return upsertProjectLocal(locale, project, data)
-      })
-      .then(result => {
-        // console.log ('storeHardocsObject:upsert ' + JSON.stringify(result))
-        if (!result.ok) { // errors won't throw of themselves, thus we test
-          reject (result)
-        }
-        resolve (result)
-      })
-      .catch (err => {
-        console.log ('storeHardocsObject:error: ' + err)
-        reject (err)
-      })
-  })
-}
-
 
 // this is the local save, after editing,  and before any replications to the cloud
 function processError (err, prefix = null) {
@@ -141,7 +89,7 @@ function processError (err, prefix = null) {
 // also, must specify it as dataCallback.bind(this), otherwise failure,
 // as 'this' will be that local to present method, not to the calling app.
 // All care here means all simplicity in the app's use of this api
-const saveProjectObject = (
+const storeProjectObject = (
   projectObject,
   dataCallback,
   dbName = 'habitat-projects') => {
@@ -154,7 +102,7 @@ const saveProjectObject = (
     const db = createOrOpenDatabase(dbName)
     getStatusFromDb(db)
       .then(result => {
-        console.log('saveProjectObject:status: ' + JSON.stringify(result))
+        console.log('storeProjectObject:status: ' + JSON.stringify(result))
 
         // let's use our repaired version of the utility
         const upsertFunction = (doc) => {
@@ -189,7 +137,7 @@ const saveProjectObject = (
         // the updated rev with id, not the updated object
         result = Object.assign(result, { timestamp: timeStamp })
 
-        console.log ('saveProjectObject result: ' + JSON.stringify(result))
+        console.log ('storeProjectObject result: ' + JSON.stringify(result))
         dataCallback (result) // our essential step...so original Project updates
 
         resolve({
@@ -199,18 +147,18 @@ const saveProjectObject = (
         ) // we also return it, in local style
       })
       .catch(err => {
-        reject(processError(err, 'saveProjectObject'))
+        reject(processError(err, 'storeProjectObject'))
       })
   })
 }
 
-// this is used at to save with no _rev change, from loading cloud version
-const saveObjectNoEdit = (habitatObject, dbName = 'habitat-projects') => {
+// this is used to save with no _rev change, used for our replicate-replacing protocol
+const storeProjectObjectSameRev = (habitatObject, dbName = 'habitat-projects') => {
   return new Promise((resolve, reject) => {
     const db = createOrOpenDatabase(dbName)
     getStatusFromDb(db)
       .then(result => {
-        console.log('saveObjectNoEdit:status: ' + JSON.stringify(result))
+        console.log('storeProjectObjectSameRev:status: ' + JSON.stringify(result))
         // console.log ('storeHardocsObject:data: ' + JSON.stringify(data))
         return
       })
@@ -219,12 +167,18 @@ const saveObjectNoEdit = (habitatObject, dbName = 'habitat-projects') => {
         return putJsonToDb(db, habitatObject, { new_edits: false })
       })
       .then(result => {
-        console.log ('saveObjectNoEdit: ' + JSON.stringify(result))
+        console.log ('storeProjectObjectSameRev: ' + JSON.stringify(result))
         result.ok = true
-        resolve(result)
+        resolve(
+          {
+            ok: true,
+            msg: 'Project stored with same rev',
+            data: result.data
+          }
+        )
       })
       .catch(err => {
-        console.log('saveObjectNoEdit:err: ' + err)
+        console.log('storeProjectObjectSameRev:err: ' + err)
         reject(err)
       })
   })
@@ -318,7 +272,6 @@ const listLocaleProjects =  (locale = '', dbName = 'hardocs-projects') => {
         console.log('loadProjectFromDatabase:status: ' + JSON.stringify(result))
       })
       .then (() => {
-        // const key = keyFromParts(locale, '*')
         return alldocsJsonFromDb(db, { include_docs: true })
       })
       .then (result => {
@@ -331,12 +284,13 @@ const listLocaleProjects =  (locale = '', dbName = 'hardocs-projects') => {
   })
 }
 
-// *todo this goes out, or if needed, renames as replicateFromToDatabase
-const replicateDatabase = (from, to, options = {}) => {
+// this is no longer something that can be done, as Habitat is properly locked down
+// the exception would be by superAdmin, and for testing much later inter-cloud, we leave it
+const replicateFromToDatabase = (from, to, options = {}) => {
   const fromDb = createOrOpenDatabase(from)
   const toDb = createOrOpenDatabase(to)
 
-  // *todo* a little status checking Promise surround here...pronto??
+  // a little status checking Promise surround here...before this ever gets used
 
   return replicateDb(fromDb, toDb, options)
 }
@@ -348,14 +302,12 @@ const keyFromParts = (locale, project, identity) => {
 export {
   createOrOpenDatabase,
   getStatusOfDb,
-  loadHabitatObject,
-  storeHardocsObject,
+  loadProjectObject,
   clearDatabase,
   listLocaleProjects,
-  readLocalProjectObject,
-  saveProjectObject,
-  saveObjectNoEdit,
+  storeProjectObject,
+  storeProjectObjectSameRev,
   updateProjectObject,
-  replicateDatabase,
+  replicateFromToDatabase,
   keyFromParts
 }
