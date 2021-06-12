@@ -82,12 +82,12 @@ function handleHabitatCloudResult (promiseResult) {
           msg: result
         }
       } else {
-        // console.log('handleHabitatCloudResult:json object result: ' + JSON.stringify(result))
+        console.log('handleHabitatCloudResult:json object result: ' + JSON.stringify(result))
         // we parse here, so the app doesn't have to
         // be careful: thrown errors in cloud won't have data returning
         let data = result.data
           ? JSON.parse(result.data) // unexpected errors caught in calling routine
-          : {}
+          : { no: 'data'}
 
         return {
           ok: result.ok,
@@ -130,8 +130,8 @@ const doRequest = (command = 'get-login-identity', url, args = {}) => {
     case 'loadProjectResolve':
       result = loadProjectResolve(url, args)
       break
-    case 'uploadProject':
-      result = uploadProject(url, args)
+    case 'updateProject':
+      result = updateProject(url, args)
       break
     case 'dbExists':
       // *todo* isn't this decode a leftover; do without?
@@ -330,13 +330,13 @@ const loadProjectUnresolved = (url, {project, locale, identity, options = {}}) =
     // we don't catch, so that throws are caught  directly in api
 }
 
-const uploadProject = (url, {locale, project, projectData, options}) => {
+const updateProject = (url, {locale, project, projectData, options}) => {
   console.log('client requesting cloud update project: ' + projectData._id + ', url: ' + url)
 
   url += '/habitat-request'
   const body = {
-    name: 'uploadProject: ' + projectData._id,
-    cmd: 'uploadProject',
+    name: 'updateProject: ' + projectData._id,
+    cmd: 'updateProject',
     locale: locale,
     project: project,
     projectData: projectData,
@@ -344,7 +344,7 @@ const uploadProject = (url, {locale, project, projectData, options}) => {
     json: true
   }
 
-  console.log('uploadProject:body: ' + JSON.stringify(body))
+  console.log('updateProject:body: ' + JSON.stringify(body))
   // *todo* preliminaries only so far
   return fetch(url, {
     method: 'POST',
@@ -364,7 +364,7 @@ const uploadProject = (url, {locale, project, projectData, options}) => {
       }
       return {
         ok: handled.ok,
-        msg: 'Updating project: ' + projectData._id + ', ' + handled.msg
+        msg: handled.msg
       }
     })
 }
