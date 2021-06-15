@@ -53,7 +53,7 @@ const checkFetchStatus = (res) => {
   }
 }
 
-// we're not actually entertaining string results any more, but
+// we're not actually entertaining string results anymore, but
 // if we would in future, this safeties those and errors also
 // as far as values, all life is a Promise, no?
 // *todo* !!! needs to be applied everywhere
@@ -79,6 +79,7 @@ function handleHabitatCloudResult (promiseResult) {
         return {
           ok: true,
           data: {no: 'data'},
+          advice: null,
           msg: result
         }
       } else {
@@ -92,7 +93,7 @@ function handleHabitatCloudResult (promiseResult) {
         return {
           ok: result.ok,
           data: data,
-          msg: result.msg
+          msg: (result.advice && result.advice.length > 0) ? result.advice : result.msg,
         }
       }
     })
