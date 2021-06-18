@@ -141,6 +141,9 @@ const doRequest = (command = 'get-login-identity', url, args = {}) => {
     case 'initializeCloud':
       result = initializeCloud(url)
       break
+    case 'listProjects':
+      result = listProjects(url, args)
+      break
     case 'tryGql':
       result = tryGql(url, args)
       break
@@ -520,8 +523,42 @@ const publishProject = (url, {status, locale, project}) => {
     })
 }
 
+const listProjects = (url, {locale = 'all', project = 'all'}) => {
+  console.log('client requesting list projects: ' + ' for locale: ' +
+    locale + ', project: ' + project)
+
+  url += '/habitat-request'
+  const body = {
+    name: 'list projects locale: ' + locale + ', project: ' + project,
+    cmd: 'listProjects',
+    publishStatus: status,
+    locale: locale,
+    project: project,
+    json: true
+  }
+
+  console.log('listProjects:body: ' + JSON.stringify(body))
+
+  return fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
+    headers: new Headers({
+      'Content-Type': 'application/json',
+    }),
+  })
+    .then(result => {
+      return handleHabitatCloudResult(result)
+    })
+    .catch(err => {
+      console.log('listProjects:error ' + err)
+      return {ok: false, msg: 'cmd:listProjects:error: ' + err}
+    })
+}
+
 // note - due trepidation before doing this, as entire project will be _gone_,
 // thus only an agent can do it, but you must also provide a stop and verify modal
+
 const deleteProject = (url, {locale, project}) => {
   console.log('client requesting delete: ' + status
     + ' for ' + locale + ' - ' + project)
