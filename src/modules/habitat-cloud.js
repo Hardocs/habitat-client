@@ -22,11 +22,14 @@ import {fetch} from 'pouchdb-fetch/lib/index-browser.es'
 // but we want to use node-fetch also for its raw check on connection initially...
 const nodeFetch = require ('node-fetch')
 
+const habitatCloud = safeEnv(process.env.HABITAT_CLOUD,
+  'https://hd.narrationsd.com/hard-api')
+
 const publicCloud = safeEnv(process.env.PUBLIC_CLOUD,
   'https://hd.narrationsd.com/hard-api/habitat-public')
 
+// *todo* what about this, after discovery?  Looks like out of service, and covered
 // see that our connection is alive and pathed
-
 const assureCloudConnection = (url) => {
   // url = 'https://looloooloola.com'
   return nodeFetch (url)
@@ -42,7 +45,7 @@ const assureCloudConnection = (url) => {
     })
 }
 
-// *todo* this can be useful, should be applied in universal result handler refactor coming
+// *todo* used now only in assureCloudConnection, so goes out also
 const checkFetchStatus = (res) => {
   if (res.ok) { // res.status >= 200 && res.status < 300
     return res
@@ -57,7 +60,7 @@ const checkFetchStatus = (res) => {
 // if we would in future, this safeties those and errors also
 // as far as values, all life is a Promise, no?
 // *todo* !!! needs to be applied everywhere
-function handleHabitatCloudResult (promiseResult) {
+function handleHabitatCloudResult (promiseResult, msgPrefix = '') {
 
   const typedResult = (result) => {
     const type = result.headers.get('Content-Type')
@@ -75,12 +78,13 @@ function handleHabitatCloudResult (promiseResult) {
       // console.log ('handleHabitatCloudResult:typed from promises result is: ' + JSON.stringify(result))
 
       if (typeof result !== 'object') {
-        // console.log('handleHabitatCloudResult:string result')
+        console.log('handleHabitatCloudResult:string result')
         return {
           ok: true,
           data: {no: 'data'},
           advice: null,
-          msg: result
+          identity: null,
+          msg: msgPrefix + result
         }
       } else {
         console.log('handleHabitatCloudResult:json object result: ' + JSON.stringify(result))
@@ -93,13 +97,15 @@ function handleHabitatCloudResult (promiseResult) {
         return {
           ok: result.ok,
           data: data,
-          msg: (result.advice && result.advice.length > 0) ? result.advice : result.msg,
+          identity: result.identity,
+          msg: msgPrefix +
+            ((result.advice && result.advice.length > 0) ? result.advice : result.msg)
         }
       }
     })
 }
 
-const doRequest = (command = 'get-login-identity', url, args = {}) => {
+const doRequest = (command = 'get-login-identity', args = {}) => {
   console.log('habitat-cloud:doRequest: <' + command +
     ', args: ' + JSON.stringify(args) + '>')
 
@@ -108,47 +114,47 @@ const doRequest = (command = 'get-login-identity', url, args = {}) => {
   // this is kept for flexibility, though many commands simplify just to use { arguments }
   switch (command) {
     case 'getLoginIdentity':
-      result = getLoginIdentity(url)
+      result = getLoginIdentity(habitatCloud)
       break
     case 'checkRoles':
-      result = checkRoles(url)
+      result = checkRoles(habitatCloud)
       break
     case 'createLocale':
-      result = createLocale(url, args)
+      result = createLocale(habitatCloud, args)
       break
     case 'deleteLocale':
-      result = deleteLocale(url, args)
+      result = deleteLocale(habitatCloud, args)
       break
     case 'createProject':
-      result = createProject(url, args)
+      result = createProject(habitatCloud, args)
       break
     case 'deleteProject':
-      result = deleteProject(url, args)
+      result = deleteProject(habitatCloud, args)
       break
     case 'loadProjectUnresolved':
-      result = loadProjectUnresolved(url, args)
+      result = loadProjectUnresolved(habitatCloud, args)
       break
     case 'loadProjectResolve':
-      result = loadProjectResolve(url, args)
+      result = loadProjectResolve(habitatCloud, args)
       break
     case 'updateProject':
-      result = updateProject(url, args)
+      result = updateProject(habitatCloud, args)
       break
     case 'dbExists':
       // *todo* isn't this decode a leftover; do without?
-      result = dbExists(decodeURIComponent(url))
+      result = dbExists(decodeURIComponent(habitatCloud))
       break
     case 'initializeCloud':
-      result = initializeCloud(url)
+      result = initializeCloud(habitatCloud)
       break
     case 'listProjects':
-      result = listProjects(url, args)
+      result = listProjects(habitatCloud, args)
       break
     case 'tryGql':
-      result = tryGql(url, args)
+      result = tryGql(habitatCloud, args)
       break
     case 'publishProject':
-      result = publishProject(url, args)
+      result = publishProject(habitatCloud, args)
       break
     default:
       console.log('doRequest: habitat-client defaulting, no match')
@@ -214,30 +220,7 @@ const createLocale = (url, {locale, identity}) => {
     }),
   })
     .then(result => {
-      const type = result.headers.get('Content-Type')
-      console.log('result content type: ' + type)
-      if (type.includes('text/plain')) {
-        return result.text()
-      } else {
-        return result.json()
-      }
-    })
-    .then(result => {
-      if (typeof result !== 'object') {
-        return {
-          ok: true, msg: 'Creating locale: ' +
-            ', (string) ' + result
-        }
-      } else {
-        return {
-          ok: result.ok, msg: 'Creating locale: ' + locale +
-            ', ' + result.msg
-        }
-      }
-    })
-    .catch(err => {
-      console.log('createLocale:error ' + err)
-      return {ok: false, msg: 'cmd:createLocale:error: ' + err}
+      return handleHabitatCloudResult(result, 'createLocale result: ')
     })
 }
 
@@ -267,30 +250,7 @@ const createProject = (url, {project, locale, identity}) => {
     }),
   })
     .then(result => {
-      const type = result.headers.get('Content-Type')
-      console.log('result content type: ' + type)
-      if (type.includes('text/plain')) {
-        return result.text()
-      } else {
-        return result.json()
-      }
-    })
-    .then(result => {
-      if (typeof result !== 'object') {
-        return {
-          ok: true,
-          msg: 'Creating project: ' + ', (string) ' + result
-        }
-      } else {
-        return {
-          ok: result.ok,
-          msg: 'Creating project: ' + project + ', ' + result.msg
-        }
-      }
-    })
-    .catch(err => {
-      console.log('createProject:error ' + err)
-      return {ok: false, msg: 'cmd:createProject:error: ' + err, project: project}
+      return handleHabitatCloudResult(result, 'createProject result: ')
     })
 }
 
@@ -439,32 +399,16 @@ const tryGql = (url, {query}) => {
     }),
   })
     .then(result => {
-      const type = result.headers.get('Content-Type')
-      console.log('result content type: ' + type)
-      if (type.includes('text/plain')) {
-        return result.text()
-      } else {
-        return result.json()
-      }
+      return handleHabitatCloudResult(result)
     })
-    .then(result => {
-      if (typeof result !== 'object') {
-        return {
-          ok: true,
-          msg: 'gql result: ' + ', (string) ' + result
-        }
-      } else {
-        return {
-          ok: result.ok,
-          msg: result.msg
-        }
+    .then (handled => {
+      console.log ('handled: ' + JSON.stringify(handled))
+      if (!handled.ok) {
+        console.log ('handled.ok false!!')
+        // ok: false means a real error here, is not informational
+        throw new Error (handled.msg)  // then this makes a simpler api pattern
       }
-    })
-    .catch(err => {
-      // *todo* gql return now correct either way, but test protocol
-      // *todo* error in the chain now vs. app?
-      console.log('tryGql:error ' + err)
-      return {ok: false, msg: err}
+      return handled
     })
 }
 
@@ -493,33 +437,8 @@ const publishProject = (url, {status, locale, project}) => {
       'Content-Type': 'application/json',
     }),
   })
-    // *todo* these blocks ought to be able to be out now, as we are
-    // set on string results?  Or both stages should be refactored into routine
     .then(result => {
-      const type = result.headers.get('Content-Type')
-      console.log('result content type: ' + type)
-      if (type.includes('text/plain')) {
-        return result.text()
-      } else {
-        return result.json()
-      }
-    })
-    .then(result => {
-      if (typeof result !== 'object') {
-        return {
-          ok: true,
-          msg: 'publishProject result: ' + ', (string) ' + result
-        }
-      } else {
-        return {
-          ok: result.ok,
-          msg: 'publishProject result: ' + result.msg
-        }
-      }
-    })
-    .catch(err => {
-      console.log('publishProject:error ' + err)
-      return {ok: false, msg: 'cmd:publishProject:error: ' + err}
+      return handleHabitatCloudResult(result)
     })
 }
 
@@ -583,33 +502,8 @@ const deleteProject = (url, {locale, project}) => {
       'Content-Type': 'application/json',
     }),
   })
-    // *todo* these blocks ought to be able to be out now, as we are
-    // set on string results?  Or both stages should be refactored into routine
     .then(result => {
-      const type = result.headers.get('Content-Type')
-      console.log('result content type: ' + type)
-      if (type.includes('text/plain')) {
-        return result.text()
-      } else {
-        return result.json()
-      }
-    })
-    .then(result => {
-      if (typeof result !== 'object') {
-        return {
-          ok: true,
-          msg: 'deleteProject result: ' + ', (string) ' + result
-        }
-      } else {
-        return {
-          ok: result.ok,
-          msg: 'deleteProject result: ' + result.msg
-        }
-      }
-    })
-    .catch(err => {
-      console.log('deleteProject:error ' + err)
-      return {ok: false, msg: 'cmd:deleteProject:error: ' + err}
+      return handleHabitatCloudResult(result, 'deleteProject result: ')
     })
 }
 
@@ -639,33 +533,8 @@ const deleteLocale = (url, {locale, project}) => {
       'Content-Type': 'application/json',
     }),
   })
-    // *todo* these blocks ought to be able to be out now, as we are
-    // set on string results?  Or both stages should be refactored into routine
     .then(result => {
-      const type = result.headers.get('Content-Type')
-      console.log('result content type: ' + type)
-      if (type.includes('text/plain')) {
-        return result.text()
-      } else {
-        return result.json()
-      }
-    })
-    .then(result => {
-      if (typeof result !== 'object') {
-        return {
-          ok: true,
-          msg: 'deleteLocale result: ' + ', (string) ' + result
-        }
-      } else {
-        return {
-          ok: result.ok,
-          msg: 'deleteLocale result: ' + result.msg
-        }
-      }
-    })
-    .catch(err => {
-      console.log('deleteLocale:error ' + err)
-      return {ok: false, msg: 'cmd:deleteLocale:error: ' + err}
+      return handleHabitatCloudResult(result, 'deleteLocale result: ')
     })
 }
 
@@ -685,21 +554,7 @@ const initializeCloud = (url) => {
 
   return habitatRequest(url, body)
     .then(result => {  // fetch returns a Result object, must decode
-      const type = result.headers.get('Content-Type')
-      console.log('result content type: ' + type)
-      if (type.includes('text/plain')) {
-        return result.text()
-      } else {
-        return result.json()
-      }
-    })
-    .then(result => {
-      console.log('fetch result: ' + JSON.stringify(result))
-      return result
-    })
-    .catch(err => {
-      console.log('fetch err: ' + JSON.stringify(err))
-      return err
+      return handleHabitatCloudResult(result, 'deleteProject result: ')
     })
 }
 
@@ -719,24 +574,13 @@ const getLoginIdentity = (url) => {
   // *todo* nginx config rather than a change within the cloud, though the
   // *todo* cloud may possibly provide the response given a rewritten call for this
   return habitatRequest(url/* +'x'*/, body)
-    .then(checkFetchStatus)
+    // .then(checkFetchStatus)
     .then(result => {  // fetch returns a Result object, must decode
-      const type = result.headers.get('Content-Type')
-      console.log('result content type: ' + type)
-      if (type.includes('text/plain')) {
-        return result.text()
-      } else {
-        return result.json()
-      }
-    })
-    .catch(err => {
-      const msg = 'Couldn\'t communicate with Habitat cloud:' +
-        'check browser console: ' + err
-      console.log(msg)
-      throw new Error (msg) // how we inform app client on all errors, now
+      return handleHabitatCloudResult(result, 'getLoginIdentity result: ')
     })
 }
 
+// *todo* this goes out, almost assured, as all role-playing is on cloud after discovery
 const checkRoles = (url) => {
 
   const body = {
@@ -748,21 +592,7 @@ const checkRoles = (url) => {
 
   return habitatRequest(url, body)
     .then(result => {  // fetch returns a Result object, must decode
-      const type = result.headers.get('Content-Type')
-      console.log('result content type: ' + type)
-      if (type.includes('text/plain')) {
-        return result.text()
-      } else {
-        return result.json()
-      }
-    })
-    .then(result => {
-      console.log('fetch result: ' + JSON.stringify(result))
-      return result
-    })
-    .catch(err => {
-      console.log('fetch err: ' + JSON.stringify(err))
-      return err
+      return handleHabitatCloudResult(result, 'checkRoles result: ')
     })
 }
 
@@ -780,7 +610,8 @@ function habitatRequest (url, body) {
   });
 }
 
-// *todo* !!!! this needs to be replaced now that we don\'t allow direct db acccess
+// *todo* !!!! this needs to be limited fo local now that we
+// *todo* don\'t allow direct cloud db access whatsoever.
 // *todo* it will require another doRequest function to see we're authorized
 // this could have been very much better if Pouch didn't hide the node-fetch status,
 // but we need to use it for its crucial auth cookie-handling behavior on CouchDB
