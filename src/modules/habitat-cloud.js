@@ -12,7 +12,8 @@
 // sensibly keep the way open for simple text at least for now.
 
 import {getStatusFromDb, safeEnv} from './transport-ifc';
-import {loginViaModal, servicesLog} from './habitat-localservices';
+import {loginViaModal, servicesLog, getNodeCookies } from './habitat-localservices';
+import axios from 'axios'
 import {createOrOpenDatabase} from './habitat-database';
 
 // it's critical to have PouchDb's fetch(), to get our auth cookies through when doing _commands_
@@ -63,6 +64,10 @@ const checkFetchStatus = (res) => {
 function handleHabitatCloudResult (promiseResult, msgPrefix = '') {
 
   const typedResult = (result) => {
+    if (result.config) {
+      // it's Axios, just strip of the message
+      return result.data
+    }
     const type = result.headers.get('Content-Type')
     // console.log('handleHabitatCloudResult:result content type: ' + type)
     if (type.includes('text/plain')) {
@@ -294,8 +299,10 @@ const loadProjectUnresolved = (url, {project, locale, identity, options = {}}) =
     // we don't catch, so that throws are caught  directly in api
 }
 
-const updateProject = (url, {locale, project, projectData, options}) => {
-  console.log('client requesting cloud update project: ' + projectData._id + ', url: ' + url)
+const updateProject = (url, {
+  locale, project, projectData, options, progressMonitor}) => {
+  console.log('client requesting cloud update project: ' +
+    projectData._id + ', url: ' + url)
 
   url += '/habitat-request'
   const body = {
@@ -308,23 +315,36 @@ const updateProject = (url, {locale, project, projectData, options}) => {
     json: true
   }
 
+  if (progressMonitor) {
+    progressMonitor(50)
+  }
+
   console.log('updateProject:body: ' + JSON.stringify(body))
-  // *todo* preliminaries only so far
-  return fetch(url, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
-    headers: new Headers({
+
+  return axios({
+    method: 'post',
+    url: url,
+    data: body,
+    withCredentials: true, // how critical? Very. Enables oauth. Don't leave home without it
+    headers: {
       'Content-Type': 'application/json',
-    }),
+    },
+    onUploadProgress: function (progressEvent) {
+      const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+      console.log('progress: ' + percentCompleted)
+      if (progressMonitor) {
+        progressMonitor(percentCompleted * 0.9)
+      }
+    }
   })
     .then(result => {
+      console.log ('axios-put result: ' + JSON.stringify(result))
       return handleHabitatCloudResult(result)
     })
-    .then (handled => {
+    .then(handled => {
       if (!handled.ok) {
         // ok: false means a real error here, is not informational
-        throw new Error (handled.msg)  // then this makes a simpler api pattern
+        throw new Error(handled.msg)  // then this makes a simpler api pattern
       }
       return {
         ok: handled.ok,
