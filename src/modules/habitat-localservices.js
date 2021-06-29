@@ -19,7 +19,7 @@ import path from 'path'
 import electron from 'electron'
 import {spawn} from 'child_process'
 
-const { dialog, getCurrentWindow, BrowserWindow } = electron.remote
+const { dialog, getCurrentWindow, BrowserWindow, app } = electron.remote
 const rendWin = getCurrentWindow()
 
 // n.b. throughout these api calls, the practice of having our own Promise wrap
@@ -290,8 +290,29 @@ const shellProcess = (childPath, args = [], options = {}) => {
   })
 }
 
-// these two ops on Node cookies very likely to go away for safety; to be replaced by
+// the two ops on Node cookies should not be exported for safety; so we have
 // a single call to log off, which is the thing they're used for other than development
+// we might additionaly have also a cloud cmd, but always this for assurancee
+
+const logoutOfHabitat = (domain = 'hd.narrationsd.com') => {
+
+  return getNodeCookies()
+    .then(/*result*/ () => {
+      // commented-out possible cookies log left in for dev.
+      // console.log('cookies: ' + JSON.stringify(result))
+      // return result
+    })
+    .then(() => {
+      // as long as this cookie name doesn't change from Habitat proxy, this does it
+      deleteNodeCookies(
+        [{ name: '_oauth2_proxy', domain: domain }])
+      return { ok: true, msg: 'Logged off ' + domain + '...'}
+    })
+    .catch(err => {
+      return { ok: false, msg: 'logOffHabitat: ' + err}
+    })
+}
+
 const getNodeCookies = (filter = {}) => {
   const nodeSession = rendWin.webContents.session
   return nodeSession.cookies.get(filter)
@@ -323,39 +344,69 @@ const getRendererCookies = () => {
 
 }
 
-const loginViaModal = (url,
+const modalOnFileHtml = async (fileName, options = {}) => {
+  return new Promise ((resolve, reject) => {
+    console.log ('modal options: ' + JSON.stringify(options))
+    options = Object.assign(options, {
+      parent: rendWin,
+      modal: true,
+      show: false,
+      autoHideMenuBar : true
+    })
+    const child = new BrowserWindow(options)
+    const fileUrl = `file://${__static}\\` + fileName
+    child.loadURL(fileUrl, options)
+      .then (() => {
+        // child.once('ready-to-show', () => {
+          // let's not show it  ourselves - in some scenario, might receive an event first
+          // child.show()
+          resolve(child)
+        // })
+      })
+      .catch (err => {
+        reject (err)
+      })
+    })
+}
+
+const loginViaModal = async (url,
                         loggedInMatch = 'https://hd.narrationsd.com/',
                         options = {userAgent: 'Chrome'}) => {
   return new Promise ((resolve, reject) => {
-    const child = new BrowserWindow({ parent: rendWin, modal: true, show: false })
-
-    // a little intricate with the events here, bug how it can work
+    options = Object.assign(options, { parent: rendWin, modal: true, show: false })
+    const child = new BrowserWindow(options)
+    // a little intricate with the events here, but how it can work
     let loggedOn = false
+// url = 'x' + url
     child.loadURL(url, options)
-
-    child.once('ready-to-show', () => {
-      child.webContents.on('did-redirect-navigation', (e, url) => {
-        if (url === loggedInMatch
-          || url === loggedInMatch + '#') { // means we got through identity proxy
-          loggedOn = true // watch the order here - close event from child.close() checks it
-          child.close()
-          const msg = 'logged in to ' + loggedInMatch
-          // console.log('loginViaModal: ' + msg)
-          resolve(msg)
-        }
+      .then (() => {
+          child.webContents.on('did-redirect-navigation', (e, url) => {
+            if (url === loggedInMatch
+              || url === loggedInMatch + '#') { // means we got through identity proxy
+              loggedOn = true // watch the order here - close event from child.close() checks it
+              child.close()
+              const msg = 'logged in to ' + loggedInMatch
+              // console.log('loginViaModal: ' + msg)
+              resolve(msg)
+            }
+          })
+          child.webContents.on('close', (e) => {
+            // a flag is archaic, but better than try/catch needed on getURL otherwise,
+            // and we know the url anyway. Protecting from loggedOn state, as we'll be
+            // already resolving.
+            if (!loggedOn) {
+              const msg = 'Not logged in, as dialog was closed.'
+              console.log('loginViaModal: ' + msg)
+              reject ({ ok: false, msg: msg })
+            } else {
+              resolve (child)
+            }
+          })
+          child.show()
       })
-      child.webContents.on('close', (e) => {
-        // a flag is archaic, but better than try/catch needed on getURL otherwise,
-        // and we know the url anyway. Protecting from loggedOn state, as we'll be
-        // already resolving.
-        if (!loggedOn) {
-          const msg = 'Not logged in, as dialog was closed.'
-          console.log('loginViaModal: ' + msg)
-          reject (msg)
-        }
+      .catch (err => {
+        reject ({ ok: false, msg: 'Authenticate login failed: ' + err })
       })
-      child.show()
-    })
   })
 }
 
@@ -382,12 +433,12 @@ export {
   chooseFolderForUse,
   loadFilePathsFromFolder,
   loadFilePathsFromSelectedFolder,
+  modalOnFileHtml,
   putContentToSelectedFolder,
   putContentToFilePath,
   shellProcess,
   loginViaModal,
-  getNodeCookies,
-  deleteNodeCookies,
+  logoutOfHabitat,
   servicesLog,
   doLogging
 }

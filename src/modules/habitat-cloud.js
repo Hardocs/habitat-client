@@ -92,7 +92,7 @@ function handleHabitatCloudResult (promiseResult, msgPrefix = '') {
           msg: msgPrefix + result
         }
       } else {
-        console.log('handleHabitatCloudResult:json object result: ' + JSON.stringify(result))
+        // console.log('handleHabitatCloudResult:json object result: ' + JSON.stringify(result))
         // we parse here, so the app doesn't have to
         // be careful: thrown errors in cloud won't have data returning
         let data = result.data
@@ -110,9 +110,9 @@ function handleHabitatCloudResult (promiseResult, msgPrefix = '') {
     })
 }
 
-const doRequest = (command = 'get-login-identity', args = {}) => {
-  console.log('habitat-cloud:doRequest: <' + command +
-    ', args: ' + JSON.stringify(args) + '>')
+const doRequest = (command = 'getLoginIdentity', args = {}) => {
+  console.log('habitat-cloud:doRequest: <' + command)
+    // + ', args: ' + JSON.stringify(args) + '>')
 
   let result = {}
 
@@ -303,6 +303,14 @@ const updateProject = (url, {
   locale, project, projectData, options, progressMonitor}) => {
   console.log('client requesting cloud update project: ' +
     projectData._id + ', url: ' + url)
+  console.log ('updateProject:projectData:' + JSON.stringify(projectData.details.locale))
+  console.log ('updateProject:projectData:' + JSON.stringify(projectData.hdFrame))
+  console.log ('updateProject:projectData:' + JSON.stringify(projectData.hdObject))
+  // before anything, a safety, especially for developers
+  // let's see at least the basis of a fully formed project
+  if(!projectData.details || !projectData.hdFrame || !projectData.hdObject) {
+    throw new Error ('Fully formed Hardocs Project not present yet to update from!')
+  }
 
   url += '/habitat-request'
   const body = {
@@ -319,26 +327,36 @@ const updateProject = (url, {
     progressMonitor(50)
   }
 
-  console.log('updateProject:body: ' + JSON.stringify(body))
+  // console.log('updateProject:body: ' + JSON.stringify(body))
 
-  return axios({
-    method: 'post',
-    url: url,
-    data: body,
-    withCredentials: true, // how critical? Very. Enables oauth. Don't leave home without it
-    headers: {
+  // return axios({
+  //   method: 'post',
+  //   url: url,
+  //   data: body,
+  //   withCredentials: true, // how critical? Very. Enables oauth. Don't leave home without it
+  //   headers: {
+  //     'Content-Type': 'application/json',
+  //   },
+  //   onUploadProgress: function (progressEvent) {
+  //     console.log ('onUploadProgress loaded: ' +
+  //       progressEvent.loaded + ', total: ' + progressEvent.total)
+  //     const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+  //     console.log('progress: ' + percentCompleted)
+  //     if (progressMonitor) {
+  //       progressMonitor(percentCompleted * 0.9)
+  //     }
+  //   }
+  // })
+  return fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
+    headers: new Headers({
       'Content-Type': 'application/json',
-    },
-    onUploadProgress: function (progressEvent) {
-      const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-      console.log('progress: ' + percentCompleted)
-      if (progressMonitor) {
-        progressMonitor(percentCompleted * 0.9)
-      }
-    }
+    }),
   })
     .then(result => {
-      console.log ('axios-put result: ' + JSON.stringify(result))
+      console.log ('axios-put result: ' + JSON.stringify(result.data))
       return handleHabitatCloudResult(result)
     })
     .then(handled => {
@@ -387,7 +405,7 @@ const loadProjectResolve = (url, {project, locale, identity,
       return handleHabitatCloudResult(result)
     })
     .then (handled => {
-      console.log ('handled: ' + JSON.stringify(handled))
+      // console.log ('handled: ' + JSON.stringify(handled))
       if (!handled.ok) {
         console.log ('handled.ok false!!')
         // ok: false means a real error here, is not informational
@@ -641,8 +659,8 @@ const assureRemoteLogin = async (dbName = publicCloud) =>  {
   // console.log ('assuring connection: ' + await assureCloudConnection(dbName))
 
   return new Promise((resolve, reject) => {
-    const db = createOrOpenDatabase(dbName, {skip_setup: true}) // don't attempt create
-    getStatusFromDb(db)
+    // const db = createOrOpenDatabase(dbName, {skip_setup: true}) // don't attempt create
+    getLoginIdentity('https://hd.narrationsd.com/hard-api')
       .then(result => {
         // *todo* the actual db access is now failing, see above for upgrade, but
         // *todo* we're actually fine here for the moment, since we didn't exception access itself
@@ -676,12 +694,12 @@ const assureRemoteLogin = async (dbName = publicCloud) =>  {
           const dbHost = dbPathOnly.join('/')
           loginViaModal(dbHost + '/sign_in')
             .then(result => {
-              // console.log('assureRemoteLogin:logInViaModel result: ' + result + db)
+              console.log('assureRemoteLogin:logInViaModel result: ' + result + db)
               resolve({ok: true, msg: result + db})
             })
             .catch(err => {
-              // console.log('assureRemoteLogin:logInViaModel error: ' + err)
-              reject({ok: false, msg: err})
+              console.log('assureRemoteLogin:logInViaModel error: ' + JSON.stringify(err))
+              reject(err)
             })
         }
       })

@@ -18,11 +18,11 @@ import {
   chooseFolderForUse,
   loadFilePathsFromFolder,
   loadFilePathsFromSelectedFolder,
+  modalOnFileHtml,
   putContentToSelectedFolder,
   putContentToFilePath,
   shellProcess,
-  getNodeCookies,
-  deleteNodeCookies
+  logoutOfHabitat
 } from './modules/habitat-localservices'
 
 import {
@@ -48,11 +48,11 @@ const habitatLocal = {
   chooseFolderForUse,
   loadFilePathsFromFolder,
   loadFilePathsFromSelectedFolder,
+  modalOnFileHtml,
   putContentToSelectedFolder,
   putContentToFilePath,
   shellProcess,
-  getNodeCookies,
-  deleteNodeCookies
+  logoutOfHabitat
 }
 
 const habitatCloud = {
