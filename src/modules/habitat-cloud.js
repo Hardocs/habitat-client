@@ -1,27 +1,12 @@
-// these are habitat-hd abilities, rather than CloudDb itself
-// *todo* open calls one way to do it, but a single call as next, and path strings is better
-// *todo* get a controllable logger in here and elsewhere, so no console unless set
-
-// *todo* !! document how our doRequest avoids visibility for almost all db ops
-// *todo* !! probably a lot of refactors into fetch routine, but watch the specificts,
-// *todo* !! and let's safely keep text or json ability, while settling practice at this point
-
 // a statement of policy 09Jun 2021 is that all routines should return a standard
 // object, with ok, potential msg, and data separately if that's provided. This should
 // all occur in the cloud, and that will mean it's normally json coming here, if we
 // sensibly keep the way open for simple text at least for now.
 
-import {getStatusFromDb, safeEnv} from './transport-ifc';
-import {loginViaModal, servicesLog, getNodeCookies } from './habitat-localservices';
-import axios from 'axios'
-import {createOrOpenDatabase} from './habitat-database';
+import nodeFetch from 'node-fetch'
 
-// it's critical to have PouchDb's fetch(), to get our auth cookies through when doing _commands_
-// underneath is actually node-fetch, so we have some services for errors there
-import {fetch} from 'pouchdb-fetch/lib/index-browser.es'
-
-// but we want to use node-fetch also for its raw check on connection initially...
-const nodeFetch = require ('node-fetch')
+import { safeEnv } from './transport-ifc';
+import { loginViaModal, servicesLog, getNodeCookies } from './habitat-localservices';
 
 const habitatCloud = safeEnv(process.env.HABITAT_CLOUD,
   'https://hd.narrationsd.com/hard-api')
@@ -29,10 +14,9 @@ const habitatCloud = safeEnv(process.env.HABITAT_CLOUD,
 const publicCloud = safeEnv(process.env.PUBLIC_CLOUD,
   'https://hd.narrationsd.com/hard-api/habitat-public')
 
-// *todo* what about this, after discovery?  Looks like out of service, and covered
+// *todo* we might yet fold this into doRequest? as prefixing that is only use now
 // see that our connection is alive and pathed
 const assureCloudConnection = (url) => {
-  // url = 'https://looloooloola.com'
   return nodeFetch (url)
     .then (checkFetchStatus)
     .then (result => {
@@ -60,7 +44,6 @@ const checkFetchStatus = (res) => {
 // we're not actually entertaining string results anymore, but
 // if we would in future, this safeties those and errors also
 // as far as values, all life is a Promise, no?
-// *todo* !!! needs to be applied everywhere
 function handleHabitatCloudResult (promiseResult, msgPrefix = '') {
 
   const typedResult = (result) => {
@@ -173,9 +156,9 @@ const doRequest = (command = 'getLoginIdentity', args = {}) => {
 // our commands through to their processor layer in the hd-habitat cloud.
 // There are several critical things, entirely invisible until discovered.
 // One is to set credentials to be included, without which all will fail.
-// More critical yet, is to use PouchDb's _browser_ fetch() -- which leads to
+// More critical yet, is to use PouchDb's _browser_ nodeFetch() -- which leads to
 // un-named _native_, potentially the actual browser's, or something they made.
-// There is no other fetch() of many kinds tried that will work, and I am
+// There is no other nodeFetch() of many kinds tried that will work, and I am
 // surprised that this one does, as it manages to make a call on the web
 // which allows the browser's cookies through. That fact is crucial, as it is
 // again by experiment, the only way that the _oauth2_proxy cookie will be
@@ -183,7 +166,7 @@ const doRequest = (command = 'getLoginIdentity', args = {}) => {
 // will allow anything through.
 //
 // So, it works. What if it doesn't in some future time?  This is unlikely, as
-// this particular fetch() of theirs is central and crucial to PouchDb's ability
+// this particular nodeFetch() of theirs is central and crucial to PouchDb's ability
 // of every kind to interact with CloudDb on the net, their complete intention.
 //
 // But if somehow that fails, we can engage a workaround, less desirable because
@@ -216,7 +199,7 @@ const createLocale = (url, {locale, identity}) => {
   }
 
   // *todo* preliminaries only so far
-  return fetch(url, {
+  return nodeFetch(url, {
     method: 'POST',
     body: JSON.stringify(body),
     credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
@@ -246,7 +229,7 @@ const createProject = (url, {project, locale, identity}) => {
 
   console.log('createProject:body: ' + JSON.stringify(body))
   // *todo* preliminaries only so far
-  return fetch(url, {
+  return nodeFetch(url, {
     method: 'POST',
     body: JSON.stringify(body),
     credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
@@ -277,7 +260,7 @@ const loadProjectUnresolved = (url, {project, locale, identity, options = {}}) =
 
   console.log('loadProjectUnresolved:body: ' + JSON.stringify(body))
   // *todo* preliminaries only so far
-  return fetch(url, {
+  return nodeFetch(url, {
     method: 'POST',
     body: JSON.stringify(body),
     credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
@@ -299,13 +282,13 @@ const loadProjectUnresolved = (url, {project, locale, identity, options = {}}) =
     // we don't catch, so that throws are caught  directly in api
 }
 
-const updateProject = (url, {
-  locale, project, projectData, options, progressMonitor}) => {
+const updateProject = (url,
+        { locale, project, projectData, options, progressMonitor}) => {
   console.log('client requesting cloud update project: ' +
     projectData._id + ', url: ' + url)
-  console.log ('updateProject:projectData:' + JSON.stringify(projectData.details.locale))
-  console.log ('updateProject:projectData:' + JSON.stringify(projectData.hdFrame))
-  console.log ('updateProject:projectData:' + JSON.stringify(projectData.hdObject))
+  // console.log ('updateProject:projectData:' + JSON.stringify(projectData.details.locale))
+  // console.log ('updateProject:projectData:' + JSON.stringify(projectData.hdFrame))
+  // console.log ('updateProject:projectData:' + JSON.stringify(projectData.hdObject))
   // before anything, a safety, especially for developers
   // let's see at least the basis of a fully formed project
   if(!projectData.details || !projectData.hdFrame || !projectData.hdObject) {
@@ -329,25 +312,7 @@ const updateProject = (url, {
 
   // console.log('updateProject:body: ' + JSON.stringify(body))
 
-  // return axios({
-  //   method: 'post',
-  //   url: url,
-  //   data: body,
-  //   withCredentials: true, // how critical? Very. Enables oauth. Don't leave home without it
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //   },
-  //   onUploadProgress: function (progressEvent) {
-  //     console.log ('onUploadProgress loaded: ' +
-  //       progressEvent.loaded + ', total: ' + progressEvent.total)
-  //     const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-  //     console.log('progress: ' + percentCompleted)
-  //     if (progressMonitor) {
-  //       progressMonitor(percentCompleted * 0.9)
-  //     }
-  //   }
-  // })
-  return fetch(url, {
+  return nodeFetch(url, {
     method: 'POST',
     body: JSON.stringify(body),
     credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
@@ -356,7 +321,7 @@ const updateProject = (url, {
     }),
   })
     .then(result => {
-      console.log ('axios-put result: ' + JSON.stringify(result.data))
+      console.log ('fetch result: ' + JSON.stringify(result.data))
       return handleHabitatCloudResult(result)
     })
     .then(handled => {
@@ -392,7 +357,7 @@ const loadProjectResolve = (url, {project, locale, identity,
   }
 
   console.log('loadProjectResolve:body: ' + JSON.stringify(body))
-  return fetch(url, {
+  return nodeFetch(url, {
     method: 'POST',
     body: JSON.stringify(body),
     credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
@@ -428,7 +393,7 @@ const tryGql = (url, {query}) => {
 
   console.log('tryGql:body: ' + JSON.stringify(body))
   // *todo* preliminaries only so far
-  return fetch(url, {
+  return nodeFetch(url, {
     method: 'POST',
     body: JSON.stringify(body),
     credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
@@ -467,7 +432,7 @@ const publishProject = (url, {status, locale, project}) => {
 
   console.log('publishProject:body: ' + JSON.stringify(body))
 
-  return fetch(url, {
+  return nodeFetch(url, {
     method: 'POST',
     body: JSON.stringify(body),
     credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
@@ -496,7 +461,7 @@ const listProjects = (url, {locale = 'all', project = 'all'}) => {
 
   console.log('listProjects:body: ' + JSON.stringify(body))
 
-  return fetch(url, {
+  return nodeFetch(url, {
     method: 'POST',
     body: JSON.stringify(body),
     credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
@@ -532,7 +497,7 @@ const deleteProject = (url, {locale, project}) => {
 
   console.log('deleteProject:body: ' + JSON.stringify(body))
 
-  return fetch(url, {
+  return nodeFetch(url, {
     method: 'POST',
     body: JSON.stringify(body),
     credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
@@ -563,7 +528,7 @@ const deleteLocale = (url, {locale, project}) => {
 
   console.log('deleteLocale:body: ' + JSON.stringify(body))
 
-  return fetch(url, {
+  return nodeFetch(url, {
     method: 'POST',
     body: JSON.stringify(body),
     credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
@@ -638,7 +603,7 @@ function habitatRequest (url, body) {
 
   url += '/habitat-request'
 
-  return fetch(url, {
+  return nodeFetch(url, {
     method: 'POST',
     body: JSON.stringify(body),
     credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
@@ -648,23 +613,13 @@ function habitatRequest (url, body) {
   });
 }
 
-// *todo* !!!! this needs to be limited fo local now that we
-// *todo* don\'t allow direct cloud db access whatsoever.
-// *todo* it will require another doRequest function to see we're authorized
-// this could have been very much better if Pouch didn't hide the node-fetch status,
-// but we need to use it for its crucial auth cookie-handling behavior on CouchDB
-// See work on assureCloudConnection(), and notes on what doesn't function there
 const assureRemoteLogin = async (dbName = publicCloud) =>  {
-  // *todo* this was just a test to see if we could gain -- not really but maybe in upgrade above
-  // console.log ('assuring connection: ' + await assureCloudConnection(dbName))
+
+  // this is rather tricky below, as it also handles for login
 
   return new Promise((resolve, reject) => {
-    // const db = createOrOpenDatabase(dbName, {skip_setup: true}) // don't attempt create
     getLoginIdentity('https://hd.narrationsd.com/hard-api')
       .then(result => {
-        // *todo* the actual db access is now failing, see above for upgrade, but
-        // *todo* we're actually fine here for the moment, since we didn't exception access itself
-        // servicesLog('assureRemoteLogin:checkStatus: ' + JSON.stringify(result))
         console.log('logged in...')
         resolve({ok: true, msg: 'logged in to ' + dbName})
       })

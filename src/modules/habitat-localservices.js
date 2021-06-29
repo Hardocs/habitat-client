@@ -22,6 +22,14 @@ import {spawn} from 'child_process'
 const { dialog, getCurrentWindow, BrowserWindow, app } = electron.remote
 const rendWin = getCurrentWindow()
 
+import {ProgessModal} from './progess-modal';
+
+// due to the vagaries of modules, we have to do this as a factory
+const progressModalFactory = () => {
+  const modal =  new ProgessModal()
+  // console.log ('new progress class: ' + modal.constructor.name)
+  return modal
+}
 // n.b. throughout these api calls, the practice of having our own Promise wrap
 // enables us to unify the api even when internal calls may not be promises,
 // for results and errors always to appear and be handled the same.
@@ -340,10 +348,6 @@ const deleteNodeCookies = (cookies) => {
   })
 }
 
-const getRendererCookies = () => {
-
-}
-
 const modalOnFileHtml = async (fileName, options = {}) => {
   return new Promise ((resolve, reject) => {
     console.log ('modal options: ' + JSON.stringify(options))
@@ -354,19 +358,22 @@ const modalOnFileHtml = async (fileName, options = {}) => {
       autoHideMenuBar : true
     })
     const child = new BrowserWindow(options)
+    // n.b. for next, __static is actually the public folder in the Electron project
     const fileUrl = `file://${__static}\\` + fileName
-    child.loadURL(fileUrl, options)
-      .then (() => {
-        // child.once('ready-to-show', () => {
-          // let's not show it  ourselves - in some scenario, might receive an event first
-          // child.show()
-          resolve(child)
-        // })
+    try {
+      // loadUrl can actually be used as Promise now, but sticking to
+      // the documented. If that changes, update to ,then resolve(result), without child.once
+      child.loadURL(fileUrl, options)
+      child.once('ready-to-show', () => {
+        // let's not show it  ourselves - in some scenario, might receive an event first
+        // child.show()
+        resolve(child)
       })
-      .catch (err => {
-        reject (err)
-      })
-    })
+    }
+    catch (err) {
+      reject(err)
+    }
+  })
 }
 
 const loginViaModal = async (url,
@@ -434,6 +441,7 @@ export {
   loadFilePathsFromFolder,
   loadFilePathsFromSelectedFolder,
   modalOnFileHtml,
+  progressModalFactory,
   putContentToSelectedFolder,
   putContentToFilePath,
   shellProcess,
