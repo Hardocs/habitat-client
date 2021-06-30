@@ -23,7 +23,8 @@ import {
   putContentToSelectedFolder,
   putContentToFilePath,
   shellProcess,
-  logoutOfHabitat
+  logoutOfHabitat,
+  validateHabitatName,
 } from './modules/habitat-localservices'
 
 import {
@@ -54,7 +55,8 @@ const habitatLocal = {
   putContentToSelectedFolder,
   putContentToFilePath,
   shellProcess,
-  logoutOfHabitat
+  logoutOfHabitat,
+  validateHabitatName,
 }
 
 const habitatCloud = {

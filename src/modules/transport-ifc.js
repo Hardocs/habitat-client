@@ -1,4 +1,5 @@
 // here all database interactions are abstracted, thus decoupled
+// *todo* NOTE THAT ALL THESE WILL BE GONE SHORtLY -- SEE NOTE in habitat-database
 
 import PouchDb from 'pouchdb';
 import upsert from './pouchdb-our-upsert'
@@ -69,12 +70,12 @@ const upsertJsonToDb = (db, id, diffFunc) => {
   return db.upsert(id, diffFunc)
 }
 
-const safeEnv = (value, preset) => { // don't use words like default...
-
-  return typeof value !== 'undefined' && value
-    ? value
-    : preset
-}
+// const safeEnv = (value, preset) => { // don't use words like default...
+//
+//   return typeof value !== 'undefined' && value
+//     ? value
+//     : preset
+// }
 
 export {
   createOrOpenDb,
@@ -91,6 +92,6 @@ export {
   deleteDocument,
   compactDb,
   destroyDb,
-  safeEnv
+  // safeEnv
 }
 

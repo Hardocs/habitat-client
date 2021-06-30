@@ -8,7 +8,7 @@ class ProgessModal {
     height: 480,
     width: 600,
     backgroundColor: '#0d3856',
-    timeOut: 2500,
+    timeOut: 1500,
     timeIn: 1000,
   }
   timer = null

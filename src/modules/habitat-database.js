@@ -1,12 +1,18 @@
 // this is the module for all data requests (and any saves) for Hardocs apps.
 //
 // It abstracts and simplifies any interaction with the filesystem or database.
+// *todo*  NOTICE THAT THIS IS GOING AWAY, SOON, AS WE WILL HAVE NO DATABASE
+// *todo*  ON THE CLIENT APP. TOTALLY INSECURE, IS THE REASON. IT CAN BE
+// *todo*  DELETED ALL TOO EASILY AS IT RESIDES IN A BROWSER CACHE, AND
+// *todo*  EQUALLY INSECURE IF WE WERE TO CONNECT IT TO THE CLOUD, AS
+// *todo*  THIS WOULD ENABLE FORGERY.
 
-// Lots of important n.b. follow...
+// *todo* I'm leaving it at the moment for convenience to the Framework App,
+// *todo* but will likely soon transit to what the Desktop APP now uses,
+// *todo* and then this module will be gone. Db calls in the transport
+// *todo* will go at the same time.
 
-// Ths layer enables different habutat-database drivers to be used in future,
-// employing for example CombatCovid or other security motifs, without changes
-// to Hardocs application code, a primary reason to use it.
+// Lots of once-important n.b. follow... remaining for advice on Promises etc. still.
 
 // We must always be Promises in here -- because the UX will need that.
 // Data is never returned at the time called; it is always by callbacks,

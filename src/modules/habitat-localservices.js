@@ -1,5 +1,5 @@
 // localservices are intended to be the variety needed of calls to access
-// local abilities through Electro nor Hardocs, like files in various direct or by dialog
+// local abilities through Electron or Hardocs, like files in various direct or by dialog
 // ways, but later also any further items if needed, such as app dialogs and windows.
 // These last are not implemented yet, but will be according to need.
 
@@ -417,6 +417,18 @@ const loginViaModal = async (url,
   })
 }
 
+const validateHabitatName = (name, label) => {
+  const re = /[^-\d\w]/
+
+  const badChars = [...name].some(char => {
+    return char.match(re)
+  })
+
+  if (badChars) {
+    const msg = 'Only letter, numbers, and dashes (-), are allowed in ' + label + '!'
+    throw { ok: false, msg: msg } // fit the pattern of our protocols, for handlers
+  }
+}
 
 // utility to keep troubleshooting ability, but get many commented
 // console.log()s out of the codebase. It offers a force argument,
@@ -434,6 +446,13 @@ const servicesLog = (msg, force = false) => {
   }
 }
 
+const safeEnv = (value, preset) => { // don't use words like default...
+
+  return typeof value !== 'undefined' && value
+    ? value
+    : preset
+}
+
 export {
   selectContentFromFolder,
   loadContentFromFilePath,
@@ -447,6 +466,8 @@ export {
   shellProcess,
   loginViaModal,
   logoutOfHabitat,
+  validateHabitatName,
   servicesLog,
-  doLogging
+  doLogging,
+  safeEnv
 }

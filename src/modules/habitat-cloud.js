@@ -5,89 +5,82 @@
 
 import nodeFetch from 'node-fetch'
 
-import { safeEnv } from './transport-ifc';
-import { loginViaModal, servicesLog, getNodeCookies } from './habitat-localservices';
+import { loginViaModal, servicesLog, safeEnv } from './habitat-localservices';
 
 const habitatCloud = safeEnv(process.env.HABITAT_CLOUD,
   'https://hd.narrationsd.com/hard-api')
 
+const cloudName = safeEnv(process.env.CLOUD_NAME,
+  'SFO Private Cloud')
+
 const publicCloud = safeEnv(process.env.PUBLIC_CLOUD,
   'https://hd.narrationsd.com/hard-api/habitat-public')
 
-// *todo* we might yet fold this into doRequest? as prefixing that is only use now
-// see that our connection is alive and pathed
-const assureCloudConnection = (url) => {
-  return nodeFetch (url)
-    .then (checkFetchStatus)
-    .then (result => {
-      console.log('assureCloudConnection:json: ' + result.json())
-      return JSON.stringify(result.json)
-    })
-    .then (body => { return body })
-    .catch (err => {
-      console.log ('checkFetchStatus:FetchError?: ' + err)
-      return 'error: ' + err.stack
-    })
-}
-
-// *todo* used now only in assureCloudConnection, so goes out also
-const checkFetchStatus = (res) => {
-  if (res.ok) { // res.status >= 200 && res.status < 300
-    return res
-  } else {
-    const msg = 'Habitat cloud not responding as expected: ' + res.statusText
-    console.log('checkFetchStatus:err: ' + msg)
-    throw new Error(msg)
-  }
-}
-
 // we're not actually entertaining string results anymore, but
-// if we would in future, this safeties those and errors also
-// as far as values, all life is a Promise, no?
-function handleHabitatCloudResult (promiseResult, msgPrefix = '') {
+// if we would in future, this should safety those and errors also
+// as far as values. All life is a Promise, no?
+function handleHabitatCloudResult (responseResult, msgPrefix = '') {
 
   const typedResult = (result) => {
-    if (result.config) {
-      // it's Axios, just strip of the message
-      return result.data
-    }
     const type = result.headers.get('Content-Type')
     // console.log('handleHabitatCloudResult:result content type: ' + type)
-    if (type.includes('text/plain')) {
-      return result.text()
+    if (type.includes('application/json')) {
+      return {type: 'json', data: result.json()}
     } else {
-      return result.json()
+      return {type: 'text', data: result.text()}
     }
   }
 
-  return Promise.resolve(typedResult(promiseResult))
-    .then (result => {
+  // the trick going on here is that in a fetch result,
+  // which underlies nodeFetch and others we don't need
+  // that promie much but actually can't deliver due to
+  // the way browsers and the web actually operate,
+  // the content of the Result object is still a Promise (!)
+  // Thus we have to use all Promise-fu on it, after determining
+  // what kind it is.
 
-      // console.log ('handleHabitatCloudResult:typed from promises result is: ' + JSON.stringify(result))
+  // One more trarp for the unwary is that the content appears to
+  // lock, once a Promise from it has been extracted. This means
+  // that fishing around with console.log() to see what transpires
+  // is going to get you in a lot of trouble. Hence this nested
+  // routine.  It works, and we get everything back which might
+  // have been sent, in convenient form, interpreted also so that
+  // all the features of our cloud and client API works.
 
-      if (typeof result !== 'object') {
-        console.log('handleHabitatCloudResult:string result')
+  const tResult = typedResult(responseResult) // just to make it clear
+  return Promise.resolve(tResult.data)
+    .then(result => {
+
+      console.log('handleHabitatCloudResult:typed result: ' + JSON.stringify(result))
+
+      if (tResult.type === 'json') {
+        // we parse here, so the app doesn't have to
+        // be careful: thrown errors in cloud won't have data returning
+        const data = result.data
+          ? JSON.parse(result.data) // unexpected errors caught in calling routine
+          : {no: 'data'}
+
+        const msg = msgPrefix +
+          ((result.advice && result.advice.length > 0) ? result.advice : result.msg)
+
+        // just combine what we have in, return the rest so we can add things later
+        const interpreted = Object.assign(result, {
+          data: data,
+          msg: msg
+        })
+
+        // testing only; too much to log on real data
+        console.log('interpreted: ' + JSON.stringify(interpreted))
+        return interpreted
+      } else {
         return {
           ok: true,
           data: {no: 'data'},
           advice: null,
           identity: null,
+          roles: null,
+          possibleRoles: null,
           msg: msgPrefix + result
-        }
-      } else {
-        // console.log('handleHabitatCloudResult:json object result: ' + JSON.stringify(result))
-        // we parse here, so the app doesn't have to
-        // be careful: thrown errors in cloud won't have data returning
-        let data = result.data
-          ? JSON.parse(result.data) // unexpected errors caught in calling routine
-          : { no: 'data'}
-
-        return {
-          ok: result.ok,
-          data: data,
-          identity: result.identity,
-          msg: msgPrefix +
-            ((result.advice && result.advice.length > 0) ? result.advice : result.msg)
         }
       }
     })
@@ -152,61 +145,20 @@ const doRequest = (command = 'getLoginIdentity', args = {}) => {
   return result
 }
 
-// n.b. here.  This is an implementation which actually functions, getting
-// our commands through to their processor layer in the hd-habitat cloud.
-// There are several critical things, entirely invisible until discovered.
-// One is to set credentials to be included, without which all will fail.
-// More critical yet, is to use PouchDb's _browser_ nodeFetch() -- which leads to
-// un-named _native_, potentially the actual browser's, or something they made.
-// There is no other nodeFetch() of many kinds tried that will work, and I am
-// surprised that this one does, as it manages to make a call on the web
-// which allows the browser's cookies through. That fact is crucial, as it is
-// again by experiment, the only way that the _oauth2_proxy cookie will be
-// returned to it, in turn the only way our highly recommended security proxy
-// will allow anything through.
-//
-// So, it works. What if it doesn't in some future time?  This is unlikely, as
-// this particular nodeFetch() of theirs is central and crucial to PouchDb's ability
-// of every kind to interact with CloudDb on the net, their complete intention.
-//
-// But if somehow that fails, we can engage a workaround, less desirable because
-// it will allow visibility of our commands. This would likely not a particular hazard,
-// if we like to keep things private as a security  practice, because the combination
-// of the proxy's requirement of proven identity, and that we will only permit certain
-// identities to use administrative commands, should keep away any uses of what
-// an ill-doer might observe.  In the end, it's not different from the security of all
-// CouchDb commands, which are often in the open this way.
-//
-// This argument would be true, because the workaround would be to _extend_ on one
-// of the normal CouchDb commands. If we add our command strings beyond the end of
-// the path sequence possible for a normal db command, then we can pick that off and
-// then divert in the command layer, so that we use and return from what we sent,
-// while the CouchDb instance never sees it. But again, what we have now should be
-// most secure, and there is little reason to suspect it would ever become unavailable.
-//
-// These notes will move along with the code, at such time that we modularize
-// the overall cloud command abilities.
 const createLocale = (url, {locale, identity}) => {
   console.log('client requesting cloud create locale: ' + identity + ', url: ' + url)
 
   url += '/habitat-request'
   const body = {
     name: 'create locale: ' + locale, // *todo* sort out meanings and/or english for command
-    cmd: 'createLocale', // *todo* settle this. Locale all around better? Or third word?
+    cmd: 'createLocale',
     identity: identity,
     locale: locale,
     json: true
   }
 
   // *todo* preliminaries only so far
-  return nodeFetch(url, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
-    headers: new Headers({
-      'Content-Type': 'application/json',
-    }),
-  })
+  return habitatRequest(url, body)
     .then(result => {
       return handleHabitatCloudResult(result, 'createLocale result: ')
     })
@@ -228,15 +180,7 @@ const createProject = (url, {project, locale, identity}) => {
   }
 
   console.log('createProject:body: ' + JSON.stringify(body))
-  // *todo* preliminaries only so far
-  return nodeFetch(url, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
-    headers: new Headers({
-      'Content-Type': 'application/json',
-    }),
-  })
+  return habitatRequest(url, body)
     .then(result => {
       return handleHabitatCloudResult(result, 'createProject result: ')
     })
@@ -260,14 +204,7 @@ const loadProjectUnresolved = (url, {project, locale, identity, options = {}}) =
 
   console.log('loadProjectUnresolved:body: ' + JSON.stringify(body))
   // *todo* preliminaries only so far
-  return nodeFetch(url, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
-    headers: new Headers({
-      'Content-Type': 'application/json',
-    }),
-  })
+  return habitatRequest(url, body)
     .then(result => {
       return handleHabitatCloudResult(result)
     })
@@ -286,13 +223,17 @@ const updateProject = (url,
         { locale, project, projectData, options, progressMonitor}) => {
   console.log('client requesting cloud update project: ' +
     projectData._id + ', url: ' + url)
-  // console.log ('updateProject:projectData:' + JSON.stringify(projectData.details.locale))
-  // console.log ('updateProject:projectData:' + JSON.stringify(projectData.hdFrame))
-  // console.log ('updateProject:projectData:' + JSON.stringify(projectData.hdObject))
+
   // before anything, a safety, especially for developers
   // let's see at least the basis of a fully formed project
-  if(!projectData.details || !projectData.hdFrame || !projectData.hdObject) {
-    throw new Error ('Fully formed Hardocs Project not present yet to update from!')
+  // *todo* there could be more sanity checking here if they need it
+  if(!projectData.details
+    || !projectData.details.locale
+    || !projectData.details.name
+    || !projectData.hdFrame
+    || !projectData.hdObject) {
+    throw new Error ('Fully formed Hardocs Project not present yet to update from! ' +
+      'See what\'s missing: ' + JSON.stringify(projectData))
   }
 
   url += '/habitat-request'
@@ -310,16 +251,7 @@ const updateProject = (url,
     progressMonitor(50)
   }
 
-  // console.log('updateProject:body: ' + JSON.stringify(body))
-
-  return nodeFetch(url, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
-    headers: new Headers({
-      'Content-Type': 'application/json',
-    }),
-  })
+  return habitatRequest(url, body)
     .then(result => {
       console.log ('fetch result: ' + JSON.stringify(result.data))
       return handleHabitatCloudResult(result)
@@ -357,14 +289,7 @@ const loadProjectResolve = (url, {project, locale, identity,
   }
 
   console.log('loadProjectResolve:body: ' + JSON.stringify(body))
-  return nodeFetch(url, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
-    headers: new Headers({
-      'Content-Type': 'application/json',
-    }),
-  })
+  return habitatRequest(url, body)
     .then(result => {
       console.log ('loadProjectResolve":firstresult: ' + JSON.stringify(result))
       return handleHabitatCloudResult(result)
@@ -393,14 +318,7 @@ const tryGql = (url, {query}) => {
 
   console.log('tryGql:body: ' + JSON.stringify(body))
   // *todo* preliminaries only so far
-  return nodeFetch(url, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
-    headers: new Headers({
-      'Content-Type': 'application/json',
-    }),
-  })
+  return habitatRequest(url, body)
     .then(result => {
       return handleHabitatCloudResult(result)
     })
@@ -430,16 +348,7 @@ const publishProject = (url, {status, locale, project}) => {
     json: true
   }
 
-  console.log('publishProject:body: ' + JSON.stringify(body))
-
-  return nodeFetch(url, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
-    headers: new Headers({
-      'Content-Type': 'application/json',
-    }),
-  })
+  return habitatRequest(url, body)
     .then(result => {
       return handleHabitatCloudResult(result)
     })
@@ -459,16 +368,7 @@ const listProjects = (url, {locale = 'all', project = 'all'}) => {
     json: true
   }
 
-  console.log('listProjects:body: ' + JSON.stringify(body))
-
-  return nodeFetch(url, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
-    headers: new Headers({
-      'Content-Type': 'application/json',
-    }),
-  })
+  return habitatRequest(url, body)
     .then(result => {
       return handleHabitatCloudResult(result)
     })
@@ -495,18 +395,9 @@ const deleteProject = (url, {locale, project}) => {
     json: true
   }
 
-  console.log('deleteProject:body: ' + JSON.stringify(body))
-
-  return nodeFetch(url, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
-    headers: new Headers({
-      'Content-Type': 'application/json',
-    }),
-  })
+  return habitatRequest(url, body)
     .then(result => {
-      return handleHabitatCloudResult(result, 'deleteProject result: ')
+      return handleHabitatCloudResult(result, 'deleteProject: ')
     })
 }
 
@@ -526,16 +417,7 @@ const deleteLocale = (url, {locale, project}) => {
     json: true
   }
 
-  console.log('deleteLocale:body: ' + JSON.stringify(body))
-
-  return nodeFetch(url, {
-    method: 'POST',
-    body: JSON.stringify(body),
-    credentials: 'include', // how critical? Very. Enables oauth. Don't leave home without it
-    headers: new Headers({
-      'Content-Type': 'application/json',
-    }),
-  })
+  return habitatRequest(url, body)
     .then(result => {
       return handleHabitatCloudResult(result, 'deleteLocale result: ')
     })
@@ -557,7 +439,7 @@ const initializeCloud = (url) => {
 
   return habitatRequest(url, body)
     .then(result => {  // fetch returns a Result object, must decode
-      return handleHabitatCloudResult(result, 'deleteProject result: ')
+      return handleHabitatCloudResult(result, 'initializeCloud: ')
     })
 }
 
@@ -568,16 +450,8 @@ const getLoginIdentity = (url) => {
     cmd: 'getLoginIdentity',
     json: true
   }
-  console.log('client requesting login identity: ' + url + ', body: ' + JSON.stringify(body))
 
-  // *todo* what's been done here needs to refactor into habitatRequest itself,
-  // *todo* tbd soon, and will eliminate much discovery boilerplate through this file
-  // *todo* experiments with url path here shows cloud should give a response with
-  // *todo* CORS if that's possible, if a bad path appears. This may well be an
-  // *todo* nginx config rather than a change within the cloud, though the
-  // *todo* cloud may possibly provide the response given a rewritten call for this
-  return habitatRequest(url/* +'x'*/, body)
-    // .then(checkFetchStatus)
+  return habitatRequest(url, body)
     .then(result => {  // fetch returns a Result object, must decode
       return handleHabitatCloudResult(result, 'getLoginIdentity result: ')
     })
@@ -599,6 +473,7 @@ const checkRoles = (url) => {
     })
 }
 
+// *todo* we might yet fold this into doRequest? as prefixing that is only use now
 function habitatRequest (url, body) {
 
   url += '/habitat-request'
@@ -617,13 +492,18 @@ const assureRemoteLogin = async (dbName = publicCloud) =>  {
 
   // this is rather tricky below, as it also handles for login
 
-  return new Promise((resolve, reject) => {
-    getLoginIdentity('https://hd.narrationsd.com/hard-api')
+  return await new Promise((resolve, reject) => {
+    getLoginIdentity(habitatCloud)
       .then(result => {
-        console.log('logged in...')
-        resolve({ok: true, msg: 'logged in to ' + dbName})
+        console.log('logged in...' + result.msg)
+        resolve({
+          ok: true,
+          msg: 'logged in to ' + cloudName,
+          data: result})
       })
       .catch(err => {
+
+        console.log ('assureRemoteLogin:err: ' + err)
         // Be very careful here. There are different responses from the oauth2-proxy,
         // depending on what it knows. Without any previous oauth2 cookie, it 401s,
         // which means there isn't any expected JSON reply internally for the status check.
@@ -644,6 +524,7 @@ const assureRemoteLogin = async (dbName = publicCloud) =>  {
           })
         } else {
           servicesLog('need to log in to ' + dbName + ', as rejected without identity')
+          // rearrange so we're talking to the proxy directly
           const dbPathOnly = dbName.split('/')
           const db = dbPathOnly.pop() // just the host, not the db
           const dbHost = dbPathOnly.join('/')
@@ -661,9 +542,13 @@ const assureRemoteLogin = async (dbName = publicCloud) =>  {
   })
 }
 
+// be sure to understand this is not definitive - is just for labels,
+// if we do it that way. Real identity and thus ids are always resolved
+// only with the secured identity in the cloud. No forgery.
 const assembleId = (locale, project, identity = '(identity)') => {
   return locale + ':' + project + ':' + identity
 }
+
 
 export {
   doRequest,
