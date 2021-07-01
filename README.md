@@ -1,50 +1,54 @@
 ---
 ---
 
-# Habitat Client API - beginning to update this 09 Jun 2021
+# Habitat Client API - beginning to update this 01 Jul 2021
 
 ## Status
 
-This is the client-side API for Habitat, the local and cloud services package for Hardocs.
+This is the client-side API for Habitat, the local and cloud services package for Hardocs. 
 
-## Publishing
+Please be sure to read the Security and Usage sections below carefully, before use.
 
-N.b. there are several publishing codes, providing for alpha and beta versions, as well as purely dev processing to work with `yarn link` in convenient development.  But watch out...npm is required for any of the publishing steps.  For example:
+## Usage
 
-- `yarn dev` - rebuilds the lib, so that a linked project will see it
-- `npm run apub` - but this is the only way to update the npm repository
+At present, we're in Beta phase, so the following will keep you aligned.
 
+- as usual, you would begin work with a release by updating your own project. As applications are using yarn, that's by: `yarn install`.
+  
 
-There are two primary versions active at present:
+- After install, you must also run the following, to actually get the Beta version, which is far advanced beyond any original from last year:  `yarn upgrade @hardocs-project/habitat-client@beta`. This will pull the beta version, and update your packages.json version in the usual way for it.
+  
 
-### branch `master`
+- From then onwards, you're able to do a general `yarn upgrade` at points you want to, to update any other packages in your project.
+  
 
-This is recently set to version 6.0.0, stable and in use for various ongoing Hardocs client work. It's published and present on the npm repository, via `@hardocs-project/habitat-client@latest`.
+- The tricky thing is that `yarn upgrade` will ***not*** upgrade beta-tagged versions. It will stick on the beta version you first installed, even when the Beta is updated.
+  
 
-### branch `feature/clear-protocol`.
+- So to pick up any later Beta version, always follow your general upgrade with the same: `yarn upgrade @hardocs-project/habitat-client@beta` as you used when originally installing it. Now you will be updated to the Beta client package as well. 
 
-This is the developmental version, recently set to separated version range from 7.0.0, which has added and revised features enabled to support the emerging Hardocs cloud services. These include the developed pattern which matches a local Hardocs object to its cloud version, enabling replication.
+## Security Concerns
 
-It can be used at present only in the Hardocs Framework Application, which demonstrates these cloud-orientated facilities as currently operational, and engages their completing development.
+At present, this npm package still includes habitatDatabase and support modules, but these will be going away shortly, as soon as the App Framework manages its internals in another way.
 
-For use appropriate in that way, and for the future, it's published also on npm, via `@hardocs-project/habitat-client@alpha`
+N.B. There MUST always be NO USE OF LOCAL DATABASE in any Hardocs apps, packages, or other code. It would be a security hazard for data loss, non-recoverabilty, and of top concern, forgery. So if you did something like this, except for the App Framework project, please be certain to remove it now.
 
-## Development
+As well, there would be no way to back up workstations dependably for Hardocs content.  This would not be a satisfactory situation at all, but security just mentions precludes us completely from considering it.
 
-Using the following procedure provides a dependable and stable ability to substitute a local clone of the habitat-client instead of the current npm repository content, enabling development.
+## Developing and Publishing
 
-Note that the npm seeming equivalent is actually quite troublesome, so this is one area where yarn has proven a useful ability.
+It's not presumed that app developers will write in any of this package, except possibly by a pull request. For that special case, there's ability to work only locally.
 
-Another useful side of that coin would be to recognize that yarn raises problems npm does not, when changing branches of a development, where a clean, deleted yarn.lock with full re-install on the fresh package.json is required as apparently the simplest way to make a working transition.
+You'd use `yarn link` in the package project, and then follow the instructions that gives you in your application project. From that time forward, your application will build with your local client package code instead of using anything from the npm repository.
 
-Knowing both of these, we've then had good ways to work together in our team, as features emerge and develop.
+This is undoable, but you can look that up. Using yarn for linking is far preferable to the npm version, which is tricky indeed.
 
-### how to do it
+To update the local package for the link, use `yarn dev` (not npm) to run the script provided. Instantly your app will use the new package.
 
-Here's the yarn procedure and results for linking, which have been giving us the nice way to have fully local development of package abilities:
+### Actually Publishing
 
-- to develop, only once use `yarn link` to prepare the local cache label.
+This is not something normally to be involved with, for the project, and additionally you would need to know accurately what you are doing to succeed and avoid ruining the repository situation for other projects using the package, in one of its tagged forms.
 
-- to connect to the result, in your app, only once use  `yarn link @hardocs-project/habitat-client`, to install the connection bypassing package.json
+Should you be tasked to do this by the Hardocs Project owner, there are several publishing scripts, providing for specific repository tag status that will determine who sees updates. Again, not unless you're tasked and permitted this on the npm repository, and not unless you fully understand consequences and what you are doing -- you can seee the protections are essential.    
 
-- then for every update, do `yarn dev` to build the lib, which will automatically update for your app - and recompile/restart it if you are running in an auto-update command such as electron:serve etc.
+F
