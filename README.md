@@ -1,7 +1,7 @@
 ---
 ---
 
-# Habitat Client API - beginning to update this 01 Jul 2021
+# Habitat Client API - updated 01 Jul 2021
 
 ## Status
 
