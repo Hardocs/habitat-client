@@ -13,25 +13,27 @@ Please be sure to read the Security and Usage sections below carefully, before u
 
 At present, we're in Beta phase, so the following will keep you aligned.
 
-- as usual, you would begin work with a release by updating your own project. As applications are using yarn, that's by: `yarn install`.
-  
+1. As usual, you would begin work with a release by updating your own project. As applications are using yarn, that's by: `yarn install`.
 
-- After install, you must also run the following, to actually get the Beta version, which is far advanced beyond any original from last year:  `yarn upgrade @hardocs-project/habitat-client@beta`. This will pull the beta version, and update your packages.json version in the usual way for it.
-  
 
-- From then onwards, you're able to do a general `yarn upgrade` at points you want to, to update any other packages in your project.
-  
+2. After install, you must also run the following, to actually get the Beta version, which is far advanced beyond any original from last year:  `yarn upgrade @hardocs-project/habitat-client@beta`. This will pull the beta version, and update your packages.json version in the usual way for it.
 
-- The tricky thing is that `yarn upgrade` will ***not*** upgrade beta-tagged versions. It will stick on the beta version you first installed, even when the Beta is updated.
-  
 
-- So to pick up any later Beta version, always follow your general upgrade with the same: `yarn upgrade @hardocs-project/habitat-client@beta` as you used when originally installing it. Now you will be updated to the Beta client package as well. 
+3. From then onwards, you're able to do a general `yarn upgrade` at points you want to, to update any other packages in your project.
+
+
+4. The tricky thing is that `yarn upgrade` will ***not*** upgrade beta-tagged versions. It will stick on the beta version you first installed, even when the Beta is updated.
+
+
+5. So to pick up any later Beta version, always follow your general upgrade with the same: `yarn upgrade @hardocs-project/habitat-client@beta` as you used when originally installing it. Now you will be updated to the Beta client package as well.
 
 ## Security Concerns
 
 At present, this npm package still includes habitatDatabase and support modules, but these will be going away shortly, as soon as the App Framework manages its internals in another way.
 
-N.B. There MUST always be NO USE OF LOCAL DATABASE in any Hardocs apps, packages, or other code. It would be a security hazard for data loss, non-recoverabilty, and of top concern, forgery. So if you did something like this, except for the App Framework project, please be certain to remove it now.
+N.B. There MUST always be NO USE OF LOCAL DATABASE in any Hardocs apps, packages, or other code. 
+
+It would be a security hazard for data loss, non-recoverabilty, and of top concern, forgery. So if you did something like this, except for the App Framework project, please be certain to remove it now.
 
 As well, there would be no way to back up workstations dependably for Hardocs content.  This would not be a satisfactory situation at all, but security just mentions precludes us completely from considering it.
 
