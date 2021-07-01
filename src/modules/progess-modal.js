@@ -14,8 +14,8 @@ class ProgessModal {
   timer = null
   modal = null
 
-  constructor (indicatorHtml = 'waiting.html', options = null) {
-    this.indicatorHtml = indicatorHtml
+  constructor (activity, indicatorHtml = 'waiting.html', options = null) {
+    this.indicatorHtml = indicatorHtml + '?activity=' + encodeURI(activity)
     if (options) {
       this.options = options
     }

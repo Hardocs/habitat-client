@@ -115,8 +115,8 @@ const doRequest = (command = 'getLoginIdentity', args = {}) => {
     case 'loadProjectUnresolved':
       result = loadProjectUnresolved(habitatCloud, args)
       break
-    case 'loadProjectResolve':
-      result = loadProjectResolve(habitatCloud, args)
+    case 'loadProject':
+      result = loadProject(habitatCloud, args)
       break
     case 'updateProject':
       result = updateProject(habitatCloud, args)
@@ -272,7 +272,7 @@ const updateProject = (url,
 // but hopefully prepared with a command which could involve stages
 // the semantics of the name are open for that
 
-const loadProjectResolve = (url, {project, locale, identity,
+const loadProject = (url, {project, locale, identity,
   options = {resolveMode: 'latestWins'}}) => {
   console.log('load clouud project resolve: ' + project + ', locale: ' + identity +
     ', identity: ' + identity + ', url: ' + url +', mode: ' + options.resolveMode )
@@ -280,7 +280,7 @@ const loadProjectResolve = (url, {project, locale, identity,
   url += '/habitat-request'
   const body = {
     name: 'load cloud Project resolved: ' + assembleId(locale, project, identity),
-    cmd: 'loadProjectResolve',
+    cmd: 'loadProject',
     project: project,
     locale: locale,
     identity: identity,
@@ -288,10 +288,10 @@ const loadProjectResolve = (url, {project, locale, identity,
     json: true
   }
 
-  console.log('loadProjectResolve:body: ' + JSON.stringify(body))
+  console.log('loadProject:body: ' + JSON.stringify(body))
   return habitatRequest(url, body)
     .then(result => {
-      console.log ('loadProjectResolve":firstresult: ' + JSON.stringify(result))
+      console.log ('loadProject":firstresult: ' + JSON.stringify(result))
       return handleHabitatCloudResult(result)
     })
     .then (handled => {

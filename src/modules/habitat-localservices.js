@@ -25,8 +25,8 @@ const rendWin = getCurrentWindow()
 import {ProgessModal} from './progess-modal';
 
 // due to the vagaries of modules, we have to do this as a factory
-const progressModalFactory = () => {
-  const modal =  new ProgessModal()
+const progressModalFactory = (activity = 'Loading...', fileName = 'waiting.html') => {
+  const modal =  new ProgessModal(activity, fileName)
   // console.log ('new progress class: ' + modal.constructor.name)
   return modal
 }
