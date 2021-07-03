@@ -33,19 +33,19 @@ function handleHabitatCloudResult (responseResult, msgPrefix = '') {
 
   // the trick going on here is that in a fetch result,
   // which underlies nodeFetch and others we don't need
-  // that promie much but actually can't deliver due to
+  // that promise much but actually can't deliver due to
   // the way browsers and the web actually operate,
   // the content of the Result object is still a Promise (!)
   // Thus we have to use all Promise-fu on it, after determining
   // what kind it is.
 
-  // One more trarp for the unwary is that the content appears to
-  // lock, once a Promise from it has been extracted. This means
+  // One more trap for the unwary is that the content appears to
+  // lock, once a Promise resolve from it has been extracted. This means
   // that fishing around with console.log() to see what transpires
   // is going to get you in a lot of trouble. Hence this nested
   // routine.  It works, and we get everything back which might
   // have been sent, in convenient form, interpreted also so that
-  // all the features of our cloud and client API works.
+  // all the features of our cloud and client API work well.
 
   const tResult = typedResult(responseResult) // just to make it clear
   return Promise.resolve(tResult.data)
