@@ -122,6 +122,7 @@ const storeProjectObject = (
           // this is where we actually update these in, thus if other
           // Hardocs Object elements are added, must write those here too
 
+          doc.details = projectObject.details
           doc.hdFrame = projectObject.hdFrame
           doc.hdObject = projectObject.hdObject
 
